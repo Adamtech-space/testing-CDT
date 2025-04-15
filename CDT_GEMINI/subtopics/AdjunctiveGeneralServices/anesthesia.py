@@ -2,7 +2,6 @@ import os
 import sys
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
 
 # Add the parent directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))

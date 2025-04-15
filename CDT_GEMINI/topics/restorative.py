@@ -12,12 +12,12 @@ sys.path.append(root_dir)
 # Import modules
 from topics.prompt import PROMPT
 from subtopics.Restorative import (
-    activate_amalgam_restorations,
-    activate_resin_based_composite_restorations,
-    activate_gold_foil_restorations,
-    activate_inlays_and_onlays,
-    activate_crowns,
-    activate_other_restorative_services
+    AmalgamRestorationsServices,
+    ResinBasedCompositeRestorationsServices,
+    GoldFoilRestorationsServices,
+    InlaysAndOnlaysServices,
+    CrownsServices,
+    OtherRestorativeServices
 )
 
 class RestorativeServices:
@@ -27,6 +27,14 @@ class RestorativeServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        
+        # Initialize the subtopic service classes
+        self.amalgam_restorations = AmalgamRestorationsServices(llm_service)
+        self.resin_based_composite_restorations = ResinBasedCompositeRestorationsServices(llm_service)
+        self.gold_foil_restorations = GoldFoilRestorationsServices(llm_service)
+        self.inlays_and_onlays = InlaysAndOnlaysServices(llm_service)
+        self.crowns = CrownsServices(llm_service)
+        self.other_restorative_services = OtherRestorativeServices(llm_service)
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing restorative services."""
@@ -110,18 +118,18 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D2140-D2161", activate_amalgam_restorations, "Amalgam Restorations (D2140-D2161)"),
-                ("D2330-D2394", activate_resin_based_composite_restorations, "Resin-Based Composite Restorations (D2330-D2394)"),
-                ("D2410-D2430", activate_gold_foil_restorations, "Gold Foil Restorations (D2410-D2430)"),
-                ("D2510-D2664", activate_inlays_and_onlays, "Inlays and Onlays (D2510-D2664)"),
-                ("D2710-D2799", activate_crowns, "Crowns (D2710-D2799)"),
-                ("D2910-D2999", activate_other_restorative_services, "Other Restorative Services (D2910-D2999)")
+                ("D2140-D2161", self.amalgam_restorations.activate_amalgam_restorations, "Amalgam Restorations (D2140-D2161)"),
+                ("D2330-D2394", self.resin_based_composite_restorations.activate_resin_based_composite_restorations, "Resin-Based Composite Restorations (D2330-D2394)"),
+                ("D2410-D2430", self.gold_foil_restorations.activate_gold_foil_restorations, "Gold Foil Restorations (D2410-D2430)"),
+                ("D2510-D2664", self.inlays_and_onlays.activate_inlays_and_onlays, "Inlays and Onlays (D2510-D2664)"),
+                ("D2710-D2799", self.crowns.activate_crowns, "Crowns (D2710-D2799)"),
+                ("D2910-D2999", self.other_restorative_services.activate_other_restorative_services, "Other Restorative Services (D2910-D2999)")
             ]
             
-            for code_range, activate_func, subtopic_name in subtopic_map:
+            for code_range, activate_method, subtopic_name in subtopic_map:
                 if code_range in restorative_result:
                     print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
+                    code = activate_method(scenario)
                     if code:
                         specific_codes.append(code)
                         activated_subtopics.append(subtopic_name)
