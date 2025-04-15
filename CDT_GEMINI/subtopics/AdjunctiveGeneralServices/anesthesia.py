@@ -148,6 +148,9 @@ SCENARIO: {{scenario}}
         print(f"\n=== ANESTHESIA ANALYSIS RESULT ===")
         print(f"ANESTHESIA CODE: {result if result else 'None'}")
 
+
+
+anesthesia_service = AnesthesiaServices()
 # Example usage
 if __name__ == "__main__":
     anesthesia_service = AnesthesiaServices()

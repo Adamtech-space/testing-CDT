@@ -105,6 +105,7 @@ SCENARIO: {{scenario}}
         print(f"\n=== DRUGS ANALYSIS RESULT ===")
         print(f"DRUGS CODE: {result if result else 'None'}")
 
+drugs_service = DrugsServices()
 # Example usage
 if __name__ == "__main__":
     drugs_service = DrugsServices()

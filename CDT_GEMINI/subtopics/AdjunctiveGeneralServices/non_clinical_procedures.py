@@ -234,6 +234,7 @@ SCENARIO: {{scenario}}
         print(f"\n=== NON-CLINICAL PROCEDURES ANALYSIS RESULT ===")
         print(f"NON-CLINICAL PROCEDURES CODE: {result if result else 'None'}")
 
+non_clinical_service = NonClinicalProceduresServices()
 # Example usage
 if __name__ == "__main__":
     non_clinical_service = NonClinicalProceduresServices()
