@@ -4,37 +4,27 @@ Module for extracting topical fluoride codes.
 
 import os
 import sys
-from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
-from subtopics.prompt.prompt import PROMPT
-from llm_services import get_llm_service
+from llm_services import LLMService, get_service, set_model, set_temperature
 
-# Load environment variables
-load_dotenv()
+# Add the parent directory to the Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+sys.path.append(parent_dir)
+
+# Import modules
+from subtopics.prompt.prompt import PROMPT
 
 class TopicalFluorideServices:
-    """
-    Class for extracting topical fluoride codes.
-    """
-
-    def __init__(self, temperature=0.0):
-        """
-        Initialize the TopicalFluorideServices class.
-        
-        Args:
-            temperature (float, optional): Temperature setting for the LLM. Defaults to 0.0.
-        """
-        self.temperature = temperature
-        self.llm_service = get_llm_service(temperature=temperature)
+    """Class to analyze and extract topical fluoride codes based on dental scenarios."""
+    
+    def __init__(self, llm_service: LLMService = None):
+        """Initialize with an optional LLMService instance."""
+        self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
-
-    def _create_prompt_template(self):
-        """
-        Create a LangChain-based prompt template for topical fluoride code extraction.
-        
-        Returns:
-            PromptTemplate: A configured prompt template for topical fluoride code extraction.
-        """
+    
+    def _create_prompt_template(self) -> PromptTemplate:
+        """Create the prompt template for analyzing topical fluoride services."""
         return PromptTemplate(
             template=f"""
 You are a highly experienced dental coding expert
@@ -91,73 +81,46 @@ You are a highly experienced dental coding expert
 - *Patient Education:* Inform patients about post-treatment care (e.g., avoiding food/drink) to maximize fluoride benefits.
 - *Documentation Precision:* Note the fluoride type, patient risk factors, and application details to support the code if questioned.
 
-Scenario:
-"{{question}}"
+Scenario: {{scenario}}
 
 {PROMPT}
 """,
-            input_variables=["question"]
+            input_variables=["scenario"]
         )
-
-    def extract_topical_fluoride_code(self, scenario):
-        """
-        Extract topical fluoride code(s) for a given scenario.
-        
-        Args:
-            scenario (str): The dental scenario to analyze.
-            
-        Returns:
-            str: The extracted topical fluoride code(s).
-        """
+    
+    def extract_topical_fluoride_code(self, scenario: str) -> str:
+        """Extract topical fluoride code(s) for a given scenario."""
         try:
-            result = self.llm_service.invoke(
-                self.prompt_template.format(question=scenario)
-            )
-            print(f"Topical fluoride code result: {result}")
-            return result.strip()
+            print(f"Analyzing topical fluoride scenario: {scenario[:100]}...")
+            result = self.llm_service.invoke_chain(self.prompt_template, {"scenario": scenario})
+            code = result.strip()
+            print(f"Topical fluoride extract_code result: {code}")
+            return code
         except Exception as e:
-            print(f"Error in extract_topical_fluoride_code: {str(e)}")
+            print(f"Error in topical fluoride code extraction: {str(e)}")
             return ""
-
-    def activate_topical_fluoride(self, scenario):
-        """
-        Activate topical fluoride analysis and return results.
-        
-        Args:
-            scenario (str): The dental scenario to analyze.
-            
-        Returns:
-            str: The extracted topical fluoride code(s).
-        """
+    
+    def activate_topical_fluoride(self, scenario: str) -> str:
+        """Activate the topical fluoride analysis process and return results."""
         try:
-            return self.extract_topical_fluoride_code(scenario)
+            result = self.extract_topical_fluoride_code(scenario)
+            if not result:
+                print("No topical fluoride code returned")
+                return ""
+            return result
         except Exception as e:
-            print(f"Error in activate_topical_fluoride: {str(e)}")
+            print(f"Error activating topical fluoride analysis: {str(e)}")
             return ""
-            
-    def run_analysis(self, scenario):
-        """
-        Run the topical fluoride analysis for a given scenario.
-        
-        Args:
-            scenario (str): The dental scenario to analyze.
-            
-        Returns:
-            str: The extracted topical fluoride code(s).
-        """
-        return self.activate_topical_fluoride(scenario)
+    
+    def run_analysis(self, scenario: str) -> None:
+        """Run the analysis and print results."""
+        print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
+        result = self.activate_topical_fluoride(scenario)
+        print(f"\n=== TOPICAL FLUORIDE ANALYSIS RESULT ===")
+        print(f"TOPICAL FLUORIDE CODE: {result if result else 'None'}")
 
-# For backwards compatibility
-def extract_topical_fluoride_code(scenario, temperature=0.0):
-    """
-    Extract topical fluoride code(s) for a given scenario.
-    """
-    service = TopicalFluorideServices(temperature=temperature)
-    return service.extract_topical_fluoride_code(scenario)
-
-def activate_topical_fluoride(scenario):
-    """
-    Activate topical fluoride analysis and return results.
-    """
-    service = TopicalFluorideServices()
-    return service.activate_topical_fluoride(scenario) 
+topical_fluoride_service = TopicalFluorideServices()
+# Example usage
+if __name__ == "__main__":
+    scenario = input("Enter a topical fluoride dental scenario: ")
+    topical_fluoride_service.run_analysis(scenario)

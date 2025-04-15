@@ -4,37 +4,27 @@ Module for extracting other preventive services codes.
 
 import os
 import sys
-from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
-from subtopics.prompt.prompt import PROMPT
-from llm_services import get_llm_service
+from llm_services import LLMService, get_service, set_model, set_temperature
 
-# Load environment variables
-load_dotenv()
+# Add the parent directory to the Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+sys.path.append(parent_dir)
+
+# Import modules
+from subtopics.prompt.prompt import PROMPT
 
 class OtherPreventiveServices:
-    """
-    Class for extracting other preventive services codes.
-    """
+    """Class to analyze and extract other preventive services codes based on dental scenarios."""
     
-    def __init__(self, temperature=0.0):
-        """
-        Initialize the OtherPreventiveServices class.
-        
-        Args:
-            temperature (float, optional): Temperature setting for the LLM. Defaults to 0.0.
-        """
-        self.temperature = temperature
-        self.llm_service = get_llm_service(temperature=temperature)
+    def __init__(self, llm_service: LLMService = None):
+        """Initialize with an optional LLMService instance."""
+        self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
-        
-    def _create_prompt_template(self):
-        """
-        Create a LangChain-based prompt template for other preventive services code extraction.
-        
-        Returns:
-            PromptTemplate: A configured prompt template for other preventive services code extraction.
-        """
+    
+    def _create_prompt_template(self) -> PromptTemplate:
+        """Create the prompt template for analyzing other preventive services."""
         return PromptTemplate(
             template=f"""
 You are a highly experienced dental coding expert
@@ -176,74 +166,46 @@ You are a highly experienced dental coding expert
 - *Patient Education:* Counseling codes (D1310-D1321) enhance outcomes but need specific oral health ties to justify use.
 - *Documentation Precision:* Link services to patient history, risk factors, and procedure details to support claims.
 
-
-Scenario:
-"{{question}}"
+Scenario: {{scenario}}
 
 {PROMPT}
 """,
-            input_variables=["question"]
+            input_variables=["scenario"]
         )
-        
-    def extract_other_preventive_services_code(self, scenario):
-        """
-        Extract the most applicable other preventive services code from a scenario.
-        
-        Args:
-            scenario (str): The dental scenario to analyze.
-            
-        Returns:
-            str: The extracted code or empty string
-        """
+    
+    def extract_other_preventive_services_code(self, scenario: str) -> str:
+        """Extract other preventive services code(s) for a given scenario."""
         try:
-            result = self.llm_service.invoke(
-                self.prompt_template.format(question=scenario)
-            )
-            print(f"Other preventive services code result: {result}")
-            return result.strip()
+            print(f"Analyzing other preventive services scenario: {scenario[:100]}...")
+            result = self.llm_service.invoke_chain(self.prompt_template, {"scenario": scenario})
+            code = result.strip()
+            print(f"Other preventive services extract_code result: {code}")
+            return code
         except Exception as e:
-            print(f"Error in extract_other_preventive_services_code: {str(e)}")
+            print(f"Error in other preventive services code extraction: {str(e)}")
             return ""
-            
-    def activate_other_preventive_services(self, scenario):
-        """
-        Activate other preventive services analysis and return results.
-        
-        Args:
-            scenario (str): The dental scenario to analyze.
-            
-        Returns:
-            str: The extracted other preventive services code(s).
-        """
+    
+    def activate_other_preventive_services(self, scenario: str) -> str:
+        """Activate the other preventive services analysis process and return results."""
         try:
-            return self.extract_other_preventive_services_code(scenario)
+            result = self.extract_other_preventive_services_code(scenario)
+            if not result:
+                print("No other preventive services code returned")
+                return ""
+            return result
         except Exception as e:
-            print(f"Error in activate_other_preventive_services: {str(e)}")
+            print(f"Error activating other preventive services analysis: {str(e)}")
             return ""
-            
-    def run_analysis(self, scenario):
-        """
-        Run the other preventive services analysis for a given scenario.
-        
-        Args:
-            scenario (str): The dental scenario to analyze.
-            
-        Returns:
-            str: The extracted other preventive services code(s).
-        """
-        return self.activate_other_preventive_services(scenario)
+    
+    def run_analysis(self, scenario: str) -> None:
+        """Run the analysis and print results."""
+        print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
+        result = self.activate_other_preventive_services(scenario)
+        print(f"\n=== OTHER PREVENTIVE SERVICES ANALYSIS RESULT ===")
+        print(f"OTHER PREVENTIVE SERVICES CODE: {result if result else 'None'}")
 
-# For backwards compatibility
-def extract_other_preventive_services_code(scenario, temperature=0.0):
-    """
-    Extract the most applicable other preventive services code from a scenario.
-    """
-    service = OtherPreventiveServices(temperature=temperature)
-    return service.extract_other_preventive_services_code(scenario)
-
-def activate_other_preventive_services(scenario):
-    """
-    Activate other preventive services analysis and return results.
-    """
-    service = OtherPreventiveServices()
-    return service.activate_other_preventive_services(scenario) 
+other_preventive_service = OtherPreventiveServices()
+# Example usage
+if __name__ == "__main__":
+    scenario = input("Enter an other preventive services dental scenario: ")
+    other_preventive_service.run_analysis(scenario) 

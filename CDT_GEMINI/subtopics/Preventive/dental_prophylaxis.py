@@ -125,6 +125,5 @@ Scenario: {{scenario}}
 dental_prophylaxis_service = DentalProphylaxisServices()
 # Example usage
 if __name__ == "__main__":
-    dental_prophylaxis_service = DentalProphylaxisServices()
     scenario = input("Enter a dental prophylaxis dental scenario: ")
     dental_prophylaxis_service.run_analysis(scenario) 

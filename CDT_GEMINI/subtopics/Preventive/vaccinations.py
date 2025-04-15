@@ -320,6 +320,5 @@ SCENARIO: {{scenario}}
 vaccinations_service = VaccinationsServices()
 # Example usage
 if __name__ == "__main__":
-    vaccinations_service = VaccinationsServices()
     scenario = input("Enter a vaccination dental scenario: ")
     vaccinations_service.run_analysis(scenario) 
