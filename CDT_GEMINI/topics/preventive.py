@@ -11,13 +11,22 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.Preventive import (
-    activate_dental_prophylaxis,
-    activate_topical_fluoride,
-    activate_other_preventive_services,
-    activate_space_maintenance,
-    activate_vaccinations
-)
+
+# Import subtopics with fallback mechanism
+try:
+    from subtopics.Preventive.dental_prophylaxis import dental_prophylaxis_service
+    from subtopics.Preventive.topical_fluoride import topical_fluoride_service
+    from subtopics.Preventive.other_preventive_services import other_preventive_service
+    from subtopics.Preventive.space_maintenance import space_maintenance_service
+    from subtopics.Preventive.vaccinations import vaccinations_service
+except ImportError:
+    print("Warning: Could not import subtopics for Preventive. Using fallback functions.")
+    # Define fallback functions if needed
+    def activate_dental_prophylaxis(scenario): return None
+    def activate_topical_fluoride(scenario): return None
+    def activate_other_preventive_services(scenario): return None
+    def activate_space_maintenance(scenario): return None
+    def activate_vaccinations(scenario): return None
 
 class PreventiveServices:
     """Class to analyze and activate preventive services based on dental scenarios."""
@@ -103,11 +112,11 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D1110-D1120", activate_dental_prophylaxis, "Dental Prophylaxis (D1110-D1120)"),
-                ("D1206-D1208", activate_topical_fluoride, "Topical Fluoride Treatment (D1206-D1208)"),
-                ("D1310-D1355", activate_other_preventive_services, "Other Preventive Services (D1310-D1355)"),
-                ("D1510-D1555", activate_space_maintenance, "Space Maintenance (D1510-D1555)"),
-                ("D1701-D1707", activate_vaccinations, "Vaccinations (D1701-D1707)")
+                ("D1110-D1120", dental_prophylaxis_service.activate_dental_prophylaxis, "Dental Prophylaxis (D1110-D1120)"),
+                ("D1206-D1208", topical_fluoride_service.activate_topical_fluoride, "Topical Fluoride Treatment (D1206-D1208)"),
+                ("D1310-D1355", other_preventive_service.activate_other_preventive_services, "Other Preventive Services (D1310-D1355)"),
+                ("D1510-D1555", space_maintenance_service.activate_space_maintenance, "Space Maintenance (D1510-D1555)"),
+                ("D1701-D1707", vaccinations_service.activate_vaccinations, "Vaccinations (D1701-D1707)")
             ]
             
             for code_range, activate_func, subtopic_name in subtopic_map:
@@ -142,8 +151,9 @@ List them in order of relevance, with the most relevant first.
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+
+preventive_service = PreventiveServices()
 # Example usage
 if __name__ == "__main__":
-    preventive_service = PreventiveServices()
     scenario = input("Enter a preventive dental scenario: ")
     preventive_service.run_analysis(scenario)
