@@ -6,7 +6,6 @@ from .dental_prophylaxis import DentalProphylaxisServices
 from .topical_fluoride import TopicalFluorideServices
 from .other_preventive_services import OtherPreventiveServices
 from .space_maintenance import SpaceMaintenanceServices
-from .space_maintainers import SpaceMaintainersServices
 from .vaccinations import VaccinationsServices
 
 __all__ = [
@@ -14,6 +13,5 @@ __all__ = [
     'TopicalFluorideServices',
     'OtherPreventiveServices',
     'SpaceMaintenanceServices',
-    'SpaceMaintainersServices',
     'VaccinationsServices'
 ] 
