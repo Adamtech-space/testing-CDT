@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +23,15 @@ class MaxillofacialProstheticsServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D5992-D5937", general_prosthetics_service.activate_general_prosthetics, 
+                            "General Maxillofacial Prosthetics (D5992-D5937)")
+        self.registry.register("D5986-D5999", carriers_service.activate_carriers, 
+                            "Carriers (D5986-D5999)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing maxillofacial prosthetics services."""
@@ -63,8 +74,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_maxillofacial_prosthetics: {str(e)}")
             return ""
     
-    def activate_maxillofacial_prosthetics(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_maxillofacial_prosthetics(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             maxillofacial_result = self.analyze_maxillofacial_prosthetics(scenario)
@@ -74,42 +85,27 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Maxillofacial Prosthetics Result in activate_maxillofacial_prosthetics: {maxillofacial_result}")
             
-            # Process specific maxillofacial prosthetics subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, maxillofacial_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D5992-D5937", general_prosthetics_service.activate_general_prosthetics, "General Maxillofacial Prosthetics (D5992-D5937)"),
-                ("D5986-D5999", carriers_service.activate_carriers, "Carriers (D5986-D5999)")
-            ]
-            
-            for code_range, activate_func, subtopic_name in subtopic_map:
-                if code_range in maxillofacial_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "General Maxillofacial Prosthetics (D5992-D5937)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": maxillofacial_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in maxillofacial prosthetics analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_maxillofacial_prosthetics(scenario)
+        result = await self.activate_maxillofacial_prosthetics(scenario)
         print(f"\n=== MAXILLOFACIAL PROSTHETICS ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
@@ -118,6 +114,9 @@ List them in order of relevance, with the most relevant first.
 
 # Example usage
 if __name__ == "__main__":
-    maxillofacial_service = MaxillofacialProstheticsServices()
-    scenario = input("Enter a dental maxillofacial prosthetics scenario: ")
-    maxillofacial_service.run_analysis(scenario)
+    async def main():
+        maxillofacial_service = MaxillofacialProstheticsServices()
+        scenario = input("Enter a dental maxillofacial prosthetics scenario: ")
+        await maxillofacial_service.run_analysis(scenario)
+    
+    asyncio.run(main())

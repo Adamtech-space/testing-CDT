@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the project root to the path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -44,6 +46,31 @@ class ImplantServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D6190", pre_surgical_service.activate_pre_surgical, 
+                            "Pre-Surgical Services (D6190)")
+        self.registry.register("D6010-D6199", surgical_service.activate_surgical_services, 
+                            "Surgical Services (D6010-D6199)")
+        self.registry.register("D6051-D6078", implant_supported_prosthetics_service.activate_implant_supported_prosthetics, 
+                            "Implant Supported Prosthetics (D6051-D6078)")
+        self.registry.register("D6110-D6119", removable_dentures_service.activate_implant_supported_removable_dentures, 
+                            "Implant Supported Removable Dentures (D6110-D6119)")
+        self.registry.register("D6090-D6095", fixed_dentures_service.activate_implant_supported_fixed_dentures, 
+                            "Implant Supported Fixed Dentures (D6090-D6095)")
+        self.registry.register("D6058-D6077", abutment_crowns_service.activate_single_crowns_abutment, 
+                            "Single Crowns, Abutment Supported (D6058-D6077)")
+        self.registry.register("D6065-D6067", implant_crowns_service.activate_single_crowns_implant, 
+                            "Single Crowns, Implant Supported (D6065-D6067)")
+        self.registry.register("D6071-D6074", fpd_abutment_service.activate_fpd_abutment, 
+                            "Fixed Partial Denture, Abutment Supported (D6071-D6074)")
+        self.registry.register("D6075", fpd_implant_service.activate_fpd_implant, 
+                            "Fixed Partial Denture, Implant Supported (D6075)")
+        self.registry.register("D6080-D6199", other_implant_services_service.activate_other_implant_services, 
+                            "Other Implant Services (D6080-D6199)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing implant services."""
@@ -134,8 +161,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_implant_services: {str(e)}")
             return ""
     
-    def activate_implant_services(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_implant_services(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             implant_result = self.analyze_implant_services(scenario)
@@ -145,50 +172,27 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Implant Services Result in activate_implant_services: {implant_result}")
             
-            # Process specific implant services subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, implant_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D6190", pre_surgical_service.activate_pre_surgical, "Pre-Surgical Services (D6190)"),
-                ("D6010-D6199", surgical_service.activate_surgical_services, "Surgical Services (D6010-D6199)"),
-                ("D6051-D6078", implant_supported_prosthetics_service.activate_implant_supported_prosthetics, "Implant Supported Prosthetics (D6051-D6078)"),
-                ("D6110-D6119", removable_dentures_service.activate_implant_supported_removable_dentures, "Implant Supported Removable Dentures (D6110-D6119)"),
-                ("D6090-D6095", fixed_dentures_service.activate_implant_supported_fixed_dentures, "Implant Supported Fixed Dentures (D6090-D6095)"),
-                ("D6058-D6077", abutment_crowns_service.activate_single_crowns_abutment, "Single Crowns, Abutment Supported (D6058-D6077)"),
-                ("D6065-D6067", implant_crowns_service.activate_single_crowns_implant, "Single Crowns, Implant Supported (D6065-D6067)"),
-                ("D6071-D6074", fpd_abutment_service.activate_fpd_abutment, "Fixed Partial Denture, Abutment Supported (D6071-D6074)"),
-                ("D6075", fpd_implant_service.activate_fpd_implant, "Fixed Partial Denture, Implant Supported (D6075)"),
-                ("D6080-D6199", other_implant_services_service.activate_other_implant_services, "Other Implant Services (D6080-D6199)")
-            ]
-            
-            for code_range, activate_func, subtopic_name in subtopic_map:
-                if code_range in implant_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Surgical Services (D6010-D6199)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": implant_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in implant services analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_implant_services(scenario)
+        result = await self.activate_implant_services(scenario)
         print(f"\n=== IMPLANT SERVICES ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
@@ -197,6 +201,9 @@ List them in order of relevance, with the most relevant first.
 
 # Example usage
 if __name__ == "__main__":
-    implant_service = ImplantServices()
-    scenario = input("Enter an implant services dental scenario: ")
-    implant_service.run_analysis(scenario)
+    async def main():
+        implant_service = ImplantServices()
+        scenario = input("Enter an implant services dental scenario: ")
+        await implant_service.run_analysis(scenario)
+    
+    asyncio.run(main())

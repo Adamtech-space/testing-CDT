@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -24,6 +26,23 @@ class DiagnosticServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D0120-D0180", clinical_oral_evaluations_service.activate_clinical_oral_evaluations, 
+                            "Clinical Oral Evaluations (D0120-D0180)")
+        self.registry.register("D0190-D0191", prediagnostic_service.activate_prediagnostic_services, 
+                            "Pre-diagnostic Services (D0190-D0191)")
+        self.registry.register("D0210-D0391", diagnostic_imaging_service.activate_diagnostic_imaging, 
+                            "Diagnostic Imaging (D0210-D0391)")
+        self.registry.register("D0472-D0502", oral_pathology_laboratory_service.activate_oral_pathology_laboratory, 
+                            "Oral Pathology Laboratory (D0472-D0502)")
+        self.registry.register("D0411-D0999", tests_service.activate_tests_and_laboratory_examinations, 
+                            "Tests and Laboratory Examinations (D0411-D0999)")
+        self.registry.register("D4186", lambda x: "D4186" if "outcome assessment" in x.lower() else None, 
+                            "Assessment of Patient Outcome Metrics (D4186)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing diagnostic services."""
@@ -90,8 +109,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_diagnostic: {str(e)}")
             return ""
     
-    def activate_diagnostic(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_diagnostic(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             diagnostic_result = self.analyze_diagnostic(scenario)
@@ -101,46 +120,27 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Diagnostic Result in activate_diagnostic: {diagnostic_result}")
             
-            # Process specific diagnostic subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, diagnostic_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D0120-D0180", clinical_oral_evaluations_service.activate_clinical_oral_evaluations, "Clinical Oral Evaluations (D0120-D0180)"),
-                ("D0190-D0191", prediagnostic_service.activate_prediagnostic_services, "Pre-diagnostic Services (D0190-D0191)"),
-                ("D0210-D0391", diagnostic_imaging_service.activate_diagnostic_imaging, "Diagnostic Imaging (D0210-D0391)"),
-                ("D0472-D0502", oral_pathology_laboratory_service.activate_oral_pathology_laboratory, "Oral Pathology Laboratory (D0472-D0502)"),
-                ("D0411-D0999", tests_service.activate_tests_and_laboratory_examinations, "Tests and Laboratory Examinations (D0411-D0999)"),
-                ("D4186", lambda x: "D4186" if "outcome assessment" in x.lower() else None, "Assessment of Patient Outcome Metrics (D4186)")
-            ]
-            
-            for code_range, activate_func, subtopic_name in subtopic_map:
-                if code_range in diagnostic_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Clinical Oral Evaluations (D0120-D0180)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": diagnostic_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in diagnostic analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_diagnostic(scenario)
+        result = await self.activate_diagnostic(scenario)
         print(f"\n=== DIAGNOSTIC ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
@@ -149,6 +149,9 @@ List them in order of relevance, with the most relevant first.
 
 # Example usage
 if __name__ == "__main__":
-    diag_service = DiagnosticServices()
-    scenario = input("Enter a diagnostic dental scenario: ")
-    diag_service.run_analysis(scenario)
+    async def main():
+        diag_service = DiagnosticServices()
+        scenario = input("Enter a diagnostic dental scenario: ")
+        await diag_service.run_analysis(scenario)
+    
+    asyncio.run(main())

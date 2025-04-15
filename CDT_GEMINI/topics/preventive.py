@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -35,6 +37,21 @@ class PreventiveServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D1110-D1120", dental_prophylaxis_service.activate_dental_prophylaxis, 
+                            "Dental Prophylaxis (D1110-D1120)")
+        self.registry.register("D1206-D1208", topical_fluoride_service.activate_topical_fluoride, 
+                            "Topical Fluoride Treatment (D1206-D1208)")
+        self.registry.register("D1310-D1355", other_preventive_service.activate_other_preventive_services, 
+                            "Other Preventive Services (D1310-D1355)")
+        self.registry.register("D1510-D1555", space_maintenance_service.activate_space_maintenance, 
+                            "Space Maintenance (D1510-D1555)")
+        self.registry.register("D1701-D1707", vaccinations_service.activate_vaccinations, 
+                            "Vaccinations (D1701-D1707)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing preventive services."""
@@ -95,8 +112,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_preventive: {str(e)}")
             return ""
     
-    def activate_preventive(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_preventive(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             preventive_result = self.analyze_preventive(scenario)
@@ -106,54 +123,38 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Preventive Result in activate_preventive: {preventive_result}")
             
-            # Process specific preventive subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, preventive_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D1110-D1120", dental_prophylaxis_service.activate_dental_prophylaxis, "Dental Prophylaxis (D1110-D1120)"),
-                ("D1206-D1208", topical_fluoride_service.activate_topical_fluoride, "Topical Fluoride Treatment (D1206-D1208)"),
-                ("D1310-D1355", other_preventive_service.activate_other_preventive_services, "Other Preventive Services (D1310-D1355)"),
-                ("D1510-D1555", space_maintenance_service.activate_space_maintenance, "Space Maintenance (D1510-D1555)"),
-                ("D1701-D1707", vaccinations_service.activate_vaccinations, "Vaccinations (D1701-D1707)")
-            ]
-            
-            for code_range, activate_func, subtopic_name in subtopic_map:
-                if code_range in preventive_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Dental Prophylaxis (D1110-D1120)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": preventive_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in preventive analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_preventive(scenario)
+        result = await self.activate_preventive(scenario)
         print(f"\n=== PREVENTIVE ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
-
-preventive_service = PreventiveServices()
 # Example usage
 if __name__ == "__main__":
-    scenario = input("Enter a preventive dental scenario: ")
-    preventive_service.run_analysis(scenario)
+    async def main():
+        preventive_service = PreventiveServices()
+        scenario = input("Enter a preventive dental scenario: ")
+        await preventive_service.run_analysis(scenario)
+    
+    asyncio.run(main())

@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -43,6 +45,29 @@ class EndodonticServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D3110-D3120", pulp_capping_service.activate_pulp_capping, 
+                            "Pulp Capping (D3110-D3120)")
+        self.registry.register("D3220-D3222", pulpotomy_service.activate_pulpotomy, 
+                            "Pulpotomy (D3220-D3222)")
+        self.registry.register("D3230-D3240", primary_teeth_service.activate_primary_teeth_therapy, 
+                            "Endodontic Therapy on Primary Teeth (D3230-D3240)")
+        self.registry.register("D3310-D3333", endodontic_therapy_service.activate_endodontic_therapy, 
+                            "Endodontic Therapy (D3310-D3333)")
+        self.registry.register("D3346-D3348", endodontic_retreatment_service.activate_endodontic_retreatment, 
+                            "Endodontic Retreatment (D3346-D3348)")
+        self.registry.register("D3351", apexification_service.activate_apexification, 
+                            "Apexification/Recalcification (D3351)")
+        self.registry.register("D3355-D3357", pulpal_regeneration_service.activate_pulpal_regeneration, 
+                            "Pulpal Regeneration (D3355-D3357)")
+        self.registry.register("D3410-D3470", apicoectomy_service.activate_apicoectomy, 
+                            "Apicoectomy/Periradicular Services (D3410-D3470)")
+        self.registry.register("D3910-D3999", other_endodontic_service.activate_other_endodontic, 
+                            "Other Endodontic Procedures (D3910-D3999)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing endodontic services."""
@@ -127,8 +152,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_endodontic: {str(e)}")
             return ""
     
-    def activate_endodontic(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_endodontic(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             endodontic_result = self.analyze_endodontic(scenario)
@@ -138,49 +163,27 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Endodontic Result in activate_endodontic: {endodontic_result}")
             
-            # Process specific endodontic subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, endodontic_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D3110-D3120", pulpal_regeneration_service.activate_pulp_capping, "Pulp Capping (D3110-D3120)"),
-                ("D3220-D3222", pulpotomy_service.activate_pulpotomy, "Pulpotomy (D3220-D3222)"),
-                ("D3230-D3240", primary_teeth_service.activate_primary_teeth_therapy, "Endodontic Therapy on Primary Teeth (D3230-D3240)"),
-                ("D3310-D3333", endodontic_therapy_service.activate_endodontic_therapy, "Endodontic Therapy (D3310-D3333)"),
-                ("D3346-D3348", endodontic_retreatment_service.activate_endodontic_retreatment, "Endodontic Retreatment (D3346-D3348)"),
-                ("D3351", apexification_service.activate_apexification, "Apexification/Recalcification (D3351)"),
-                ("D3355-D3357", pulpal_regeneration_service.activate_pulpal_regeneration, "Pulpal Regeneration (D3355-D3357)"),
-                ("D3410-D3470", apicoectomy_service.activate_apicoectomy, "Apicoectomy/Periradicular Services (D3410-D3470)"),
-                ("D3910-D3999", other_endodontic_service.activate_other_endodontic, "Other Endodontic Procedures (D3910-D3999)")
-            ]
-            
-            for code_range, activate_func, subtopic_name in subtopic_map:
-                if code_range in endodontic_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Endodontic Therapy (D3310-D3333)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": endodontic_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in endodontic analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_endodontic(scenario)
+        result = await self.activate_endodontic(scenario)
         print(f"\n=== ENDODONTIC ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
@@ -189,6 +192,9 @@ List them in order of relevance, with the most relevant first.
 
 # Example usage
 if __name__ == "__main__":
-    endo_service = EndodonticServices()
-    scenario = input("Enter an endodontic dental scenario: ")
-    endo_service.run_analysis(scenario)
+    async def main():
+        endo_service = EndodonticServices()
+        scenario = input("Enter an endodontic dental scenario: ")
+        await endo_service.run_analysis(scenario)
+    
+    asyncio.run(main())

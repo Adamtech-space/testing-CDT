@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -31,6 +33,17 @@ class PeriodonticServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D4210-D4286", surgical_services.activate_surgical_services, 
+                            "Surgical Services (D4210-D4286)")
+        self.registry.register("D4322-D4381", non_surgical_services.activate_non_surgical_services, 
+                            "Non-Surgical Services (D4322-D4381)")
+        self.registry.register("D4910-D4999", other_periodontal_services.activate_other_periodontal_services, 
+                            "Other Periodontal Services (D4910-D4999)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing periodontic services."""
@@ -80,8 +93,8 @@ Example: "D4322-D4381, D4910-D4999, D4210-D4286"
             print(f"Error in analyze_periodontic: {str(e)}")
             return ""
     
-    def activate_periodontic(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_periodontic(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             periodontic_result = self.analyze_periodontic(scenario)
@@ -91,52 +104,38 @@ Example: "D4322-D4381, D4910-D4999, D4210-D4286"
             
             print(f"Periodontic Result in activate_periodontic: {periodontic_result}")
             
-            # Process specific periodontic subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, periodontic_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D4210-D4286", surgical_services.activate_surgical_services, "Surgical Services (D4210-D4286)"),
-                ("D4322-D4381", non_surgical_services.activate_non_surgical_services, "Non-Surgical Services (D4322-D4381)"),
-                ("D4910-D4999", other_periodontal_services.activate_other_periodontal_services, "Other Periodontal Services (D4910-D4999)")
-            ]
-            
-            for code_range, activate_func, subtopic_name in subtopic_map:
-                if code_range in periodontic_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Non-Surgical Services (D4322-D4381)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": periodontic_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in periodontic analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_periodontic(scenario)
+        result = await self.activate_periodontic(scenario)
         print(f"\n=== PERIODONTIC ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
-
-periodontic_service = PeriodonticServices()
 # Example usage
 if __name__ == "__main__":
-    scenario = input("Enter a periodontic scenario: ")
-    periodontic_service.run_analysis(scenario)
+    async def main():
+        periodontic_service = PeriodonticServices()
+        scenario = input("Enter a periodontic scenario: ")
+        await periodontic_service.run_analysis(scenario)
+    
+    asyncio.run(main())
