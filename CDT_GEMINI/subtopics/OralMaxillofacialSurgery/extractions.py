@@ -22,7 +22,7 @@ class ExtractionsServices:
         """Create the prompt template for analyzing extractions scenarios."""
         from subtopics.prompt.prompt import PROMPT
         return PromptTemplate(
-            template=f"""
+        template=f"""
 You are a highly experienced dental coding expert specializing in oral surgery procedures,
 
 ## **Dental Extraction and Surgical Procedures**
@@ -203,11 +203,11 @@ Scenario:
 {PROMPT}
 """,
             input_variables=["scenario"]
-        )
-    
+    )
+
     def extract_extractions_code(self, scenario: str) -> str:
         """Extract extractions code for a given scenario."""
-        try:
+    try:
             print(f"Analyzing extractions scenario: {scenario[:100]}...")
             result = self.llm_service.invoke_chain(self.prompt_template, {"scenario": scenario})
             code = result.strip()
@@ -218,17 +218,17 @@ Scenario:
                 return ""
                 
             return code
-        except Exception as e:
-            print(f"Error in extract_extractions_code: {str(e)}")
-            return ""
-    
+    except Exception as e:
+        print(f"Error in extract_extractions_code: {str(e)}")
+        return ""
+
     def activate_extractions(self, scenario: str) -> str:
         """Activate the extractions analysis process and return results."""
-        try:
+    try:
             return self.extract_extractions_code(scenario)
-        except Exception as e:
-            print(f"Error in activate_extractions: {str(e)}")
-            return ""
+    except Exception as e:
+        print(f"Error in activate_extractions: {str(e)}")
+        return "" 
     
     def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""

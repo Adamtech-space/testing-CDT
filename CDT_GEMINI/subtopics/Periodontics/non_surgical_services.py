@@ -26,7 +26,7 @@ class NonSurgicalServicesPeriodontics:
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing non-surgical periodontal services."""
         return PromptTemplate(
-            template=f"""
+        template=f"""
 You are a highly experienced dental coding expert
 
 Before picking a code, ask:
@@ -152,8 +152,8 @@ SCENARIO: {{scenario}}
 {PROMPT}
 """,
             input_variables=["scenario"]
-        )
-    
+    )
+
     def extract_non_surgical_services_code(self, scenario: str) -> str:
         """Extract non-surgical periodontal services code for a given scenario."""
         try:
@@ -163,9 +163,10 @@ SCENARIO: {{scenario}}
             print(f"Non-surgical periodontal extract_non_surgical_services_code result: {code}")
             return code
         except Exception as e:
-            print(f"Error in non-surgical periodontal code extraction: {str(e)}")
-            return ""
-    
+            
+                print(f"Error in non-surgical periodontal code extraction: {str(e)}")
+                return ""
+
     def activate_non_surgical_services(self, scenario: str) -> str:
         """Activate the non-surgical periodontal services analysis process and return results."""
         try:
@@ -175,8 +176,8 @@ SCENARIO: {{scenario}}
                 return ""
             return result
         except Exception as e:
-            print(f"Error activating non-surgical periodontal analysis: {str(e)}")
-            return ""
+                print(f"Error activating non-surgical periodontal analysis: {str(e)}")
+                return "" 
     
     def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""

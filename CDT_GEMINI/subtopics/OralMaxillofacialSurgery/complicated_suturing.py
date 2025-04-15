@@ -22,7 +22,7 @@ class ComplicatedSuturingServices:
         """Create the prompt template for analyzing complicated suturing scenarios."""
         from subtopics.prompt.prompt import PROMPT
         return PromptTemplate(
-            template=f"""
+        template=f"""
 You are a dental coding expert specializing in oral and maxillofacial surgery,
 
 ## **Complicated Suturing (Wounds, Lacerations)**
@@ -75,11 +75,11 @@ Scenario:
 {PROMPT}
 """,
             input_variables=["scenario"]
-        )
-    
+    )
+
     def extract_complicated_suturing_code(self, scenario: str) -> str:
         """Extract complicated suturing code for a given scenario."""
-        try:
+    try:
             print(f"Analyzing complicated suturing scenario: {scenario[:100]}...")
             result = self.llm_service.invoke_chain(self.prompt_template, {"scenario": scenario})
             code = result.strip()
@@ -90,17 +90,17 @@ Scenario:
                 return ""
                 
             return code
-        except Exception as e:
-            print(f"Error in extract_complicated_suturing_code: {str(e)}")
-            return ""
-    
+    except Exception as e:
+        print(f"Error in extract_complicated_suturing_code: {str(e)}")
+        return ""
+
     def activate_complicated_suturing(self, scenario: str) -> str:
         """Activate the complicated suturing analysis process and return results."""
-        try:
+    try:
             return self.extract_complicated_suturing_code(scenario)
-        except Exception as e:
-            print(f"Error in activate_complicated_suturing: {str(e)}")
-            return ""
+    except Exception as e:
+        print(f"Error in activate_complicated_suturing: {str(e)}")
+        return "" 
     
     def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""

@@ -4,8 +4,8 @@ import asyncio
 from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
-from subtopic_registry import SubtopicRegistry
+
+from sub_topic_registry import SubtopicRegistry
 
 # Load environment variables
 load_dotenv()
@@ -17,22 +17,11 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.OralMaxillofacialSurgery import (
-    activate_extractions,
-    activate_other_surgical_procedures,
-    activate_alveoloplasty,
-    activate_vestibuloplasty,
-    activate_excision_soft_tissue,
-    activate_excision_intra_osseous,
-    activate_excision_bone_tissue,
-    activate_surgical_incision,
-    activate_closed_fractures,
-    activate_open_fractures,
-    activate_tmj_dysfunctions,
-    activate_traumatic_wounds,
-    activate_complicated_suturing,
-    activate_other_repair_procedures
-)
+from subtopics.OralMaxillofacialSurgery.alveoloplasty import alveoloplasty_service
+from subtopics.OralMaxillofacialSurgery.excision import excision_service
+from subtopics.OralMaxillofacialSurgery.extractions import extractions_service
+from subtopics.OralMaxillofacialSurgery.fractures import fractures_service
+from subtopics.OralMaxillofacialSurgery.other_surgical_procedures import other_surgical_procedures_service
 
 class OralMaxillofacialSurgeryServices:
     """Class to analyze and activate oral and maxillofacial surgery services based on dental scenarios."""
@@ -248,6 +237,7 @@ List them in order of relevance, with the most relevant first.
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+oral_surgery_service = OralMaxillofacialSurgeryServices()
 # Example usage
 if __name__ == "__main__":
     async def main():

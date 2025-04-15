@@ -26,7 +26,7 @@ class LimitedOrthodonticTreatment:
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing limited orthodontic treatment."""
         return PromptTemplate(
-            template=f"""
+        template=f"""
 You are a highly experienced dental coding expert
 
 Before picking a code, ask:
@@ -65,31 +65,31 @@ SCENARIO: {{scenario}}
 {PROMPT}
 """,
             input_variables=["scenario"]
-        )
-    
+    )
+
     def extract_limited_orthodontic_treatment_code(self, scenario: str) -> str:
         """Extract limited orthodontic treatment code for a given scenario."""
-        try:
+    try:
             print(f"Analyzing limited orthodontic treatment scenario: {scenario[:100]}...")
             result = self.llm_service.invoke_chain(self.prompt_template, {"scenario": scenario})
             code = result.strip()
             print(f"Limited orthodontic treatment extract_limited_orthodontic_treatment_code result: {code}")
             return code
-        except Exception as e:
+    except Exception as e:
             print(f"Error in limited orthodontic treatment code extraction: {str(e)}")
-            return ""
-    
+        return ""
+
     def activate_limited_orthodontic_treatment(self, scenario: str) -> str:
         """Activate the limited orthodontic treatment analysis process and return results."""
-        try:
+    try:
             result = self.extract_limited_orthodontic_treatment_code(scenario)
             if not result:
                 print("No limited orthodontic treatment code returned")
                 return ""
             return result
-        except Exception as e:
+    except Exception as e:
             print(f"Error activating limited orthodontic treatment analysis: {str(e)}")
-            return ""
+        return "" 
     
     def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""

@@ -2,7 +2,7 @@ import os
 import sys
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+
 
 # Add the parent directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -113,9 +113,9 @@ Scenario: {{scenario}}
         print(f"\n=== PULP CAPPING ANALYSIS RESULT ===")
         print(f"PULP CAPPING CODE: {result if result else 'None'}")
 
-pulp_capping_service = PulpCappingServices()
-# Example usage
-if __name__ == "__main__":
-    pulp_capping_service = PulpCappingServices()
-    scenario = input("Enter a pulp capping dental scenario: ")
-    pulp_capping_service.run_analysis(scenario)
+pulpcapping_service = PulpCappingServices()
+# # Example usage
+# if __name__ == "__main__":
+#     pulp_capping_service = PulpCappingServices()
+#     scenario = input("Enter a pulp capping dental scenario: ")
+#     pulp_capping_service.run_analysis(scenario)

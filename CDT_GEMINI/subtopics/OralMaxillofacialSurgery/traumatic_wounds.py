@@ -22,7 +22,7 @@ class TraumaticWoundsServices:
         """Create the prompt template for analyzing traumatic wounds scenarios."""
         from subtopics.prompt.prompt import PROMPT
         return PromptTemplate(
-            template=f"""
+        template=f"""
 You are a highly experienced dental coding expert specializing in treatment of traumatic wounds in the oral cavity,
 
 ## **Traumatic Wound Procedures**
@@ -76,11 +76,11 @@ Scenario:
 {PROMPT}
 """,
             input_variables=["scenario"]
-        )
-    
+    )
+
     def extract_traumatic_wounds_code(self, scenario: str) -> str:
         """Extract traumatic wounds code for a given scenario."""
-        try:
+    try:
             print(f"Analyzing traumatic wounds scenario: {scenario[:100]}...")
             result = self.llm_service.invoke_chain(self.prompt_template, {"scenario": scenario})
             code = result.strip()
@@ -91,17 +91,17 @@ Scenario:
                 return ""
                 
             return code
-        except Exception as e:
-            print(f"Error in extract_traumatic_wounds_code: {str(e)}")
-            return ""
-    
+    except Exception as e:
+        print(f"Error in extract_traumatic_wounds_code: {str(e)}")
+        return ""
+
     def activate_traumatic_wounds(self, scenario: str) -> str:
         """Activate the traumatic wounds analysis process and return results."""
-        try:
+    try:
             return self.extract_traumatic_wounds_code(scenario)
-        except Exception as e:
-            print(f"Error in activate_traumatic_wounds: {str(e)}")
-            return ""
+    except Exception as e:
+        print(f"Error in activate_traumatic_wounds: {str(e)}")
+        return "" 
     
     def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""

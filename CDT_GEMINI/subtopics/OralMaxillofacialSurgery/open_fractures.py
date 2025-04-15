@@ -22,7 +22,7 @@ class OpenFracturesServices:
         """Create the prompt template for analyzing open fractures scenarios."""
         from subtopics.prompt.prompt import PROMPT
         return PromptTemplate(
-            template=f"""
+        template=f"""
 You are a highly experienced dental coding expert specializing in oral and maxillofacial trauma management,
 
 ## **Open Fractures Treatment**
@@ -107,11 +107,11 @@ Scenario:
 {PROMPT}
 """,
             input_variables=["scenario"]
-        )
-    
+    )
+
     def extract_open_fractures_code(self, scenario: str) -> str:
         """Extract open fractures code for a given scenario."""
-        try:
+    try:
             print(f"Analyzing open fractures scenario: {scenario[:100]}...")
             result = self.llm_service.invoke_chain(self.prompt_template, {"scenario": scenario})
             code = result.strip()
@@ -122,17 +122,17 @@ Scenario:
                 return ""
                 
             return code
-        except Exception as e:
-            print(f"Error in extract_open_fractures_code: {str(e)}")
-            return ""
-    
+    except Exception as e:
+        print(f"Error in extract_open_fractures_code: {str(e)}")
+        return ""
+
     def activate_open_fractures(self, scenario: str) -> str:
         """Activate the open fractures analysis process and return results."""
-        try:
+    try:
             return self.extract_open_fractures_code(scenario)
-        except Exception as e:
-            print(f"Error in activate_open_fractures: {str(e)}")
-            return ""
+    except Exception as e:
+        print(f"Error in activate_open_fractures: {str(e)}")
+        return "" 
     
     def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""

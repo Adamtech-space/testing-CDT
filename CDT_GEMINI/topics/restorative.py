@@ -3,8 +3,8 @@ import sys
 import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
-from subtopic_registry import SubtopicRegistry
+
+from sub_topic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,14 +13,12 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.Restorative import (
-    AmalgamRestorationsServices,
-    ResinBasedCompositeRestorationsServices,
-    GoldFoilRestorationsServices,
-    InlaysAndOnlaysServices,
-    CrownsServices,
-    OtherRestorativeServices
-)
+from subtopics.Restorative.amalgam_restorations import AmalgamRestorationsServices
+from subtopics.Restorative.resin_based_composite_restorations import ResinBasedCompositeRestorationsServices
+from subtopics.Restorative.gold_foil_restorations import GoldFoilRestorationsServices
+from subtopics.Restorative.inlays_and_onlays import InlaysAndOnlaysServices
+from subtopics.Restorative.crowns import CrownsServices
+from subtopics.Restorative.other_restorative_services import OtherRestorativeServices
 
 class RestorativeServices:
     """Class to analyze and activate restorative services based on dental scenarios."""
@@ -159,6 +157,7 @@ List them in order of relevance, with the most relevant first.
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+restorative_service = RestorativeServices()
 # Example usage
 if __name__ == "__main__":
     async def main():

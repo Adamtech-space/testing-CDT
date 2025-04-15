@@ -2,7 +2,7 @@ import os
 import sys
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+
 
 # Add the parent directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -463,6 +463,7 @@ Scenario: {{scenario}}
         print(f"\n=== OTHER IMPLANT SERVICES ANALYSIS RESULT ===")
         print(f"OTHER IMPLANT SERVICES CODE: {result if result else 'None'}")
 
+other_implant_services_service = OtherImplantServices()
 # Example usage
 if __name__ == "__main__":
     implant_service = OtherImplantServices()

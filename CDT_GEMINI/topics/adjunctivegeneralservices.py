@@ -4,8 +4,8 @@ import asyncio
 from langchain.prompts import PromptTemplate
 from prompt import PROMPT
 from llm_services import LLMService, get_service, set_model, set_temperature, generate_response
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
-from subtopic_registry import SubtopicRegistry
+
+from sub_topic_registry import SubtopicRegistry
 
 # Add parent directory to system path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -124,6 +124,7 @@ Example: "D9210-D9248, D9110-D9130, D9610-D9630"
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+adjunctive_general_services_service = AdjunctiveGeneralServices()
 # Example usage
 if __name__ == "__main__":
     async def main():

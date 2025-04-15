@@ -3,8 +3,8 @@ import sys
 import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
-from subtopic_registry import SubtopicRegistry
+
+from sub_topic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,9 +21,9 @@ try:
     from subtopics.Endodontics.endodonticretreatment import endodontic_retreatment_service
     from subtopics.Endodontics.endodontictherapy import endodontic_therapy_service
     from subtopics.Endodontics.otherendodontic import other_endodontic_service
-    from subtopics.Endodontics.pulpcapping import pulp_capping_service
+    from subtopics.Endodontics.pulpcapping import pulpcapping_service
     from subtopics.Endodontics.pulpotomy import pulpotomy_service
-    from subtopics.Endodontics.primaryteeth import primary_teeth_service
+    from subtopics.Endodontics.primaryteeth import primary_teeth_therapy_service
     from subtopics.Endodontics.pulpalregeneration import pulpal_regeneration_service
 except ImportError:
     print("Warning: Could not import subtopics for Endodontics. Using fallback functions.")
@@ -50,11 +50,11 @@ class EndodonticServices:
     
     def _register_subtopics(self):
         """Register all subtopics for parallel activation."""
-        self.registry.register("D3110-D3120", pulp_capping_service.activate_pulp_capping, 
+        self.registry.register("D3110-D3120", pulpcapping_service.activate_pulp_capping, 
                             "Pulp Capping (D3110-D3120)")
         self.registry.register("D3220-D3222", pulpotomy_service.activate_pulpotomy, 
                             "Pulpotomy (D3220-D3222)")
-        self.registry.register("D3230-D3240", primary_teeth_service.activate_primary_teeth_therapy, 
+        self.registry.register("D3230-D3240", primary_teeth_therapy_service.activate_primary_teeth_therapy, 
                             "Endodontic Therapy on Primary Teeth (D3230-D3240)")
         self.registry.register("D3310-D3333", endodontic_therapy_service.activate_endodontic_therapy, 
                             "Endodontic Therapy (D3310-D3333)")
@@ -190,6 +190,7 @@ List them in order of relevance, with the most relevant first.
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+endodontic_service = EndodonticServices()
 # Example usage
 if __name__ == "__main__":
     async def main():

@@ -3,7 +3,7 @@ import logging
 from dotenv import load_dotenv
 from llm_services import generate_response, get_service, set_model, set_temperature
 from typing import Dict, Any, Optional
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+
 
 load_dotenv()
 

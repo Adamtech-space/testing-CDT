@@ -3,8 +3,8 @@ import sys
 import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
-from subtopic_registry import SubtopicRegistry
+
+from sub_topic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,7 +39,7 @@ class DiagnosticServices:
                             "Diagnostic Imaging (D0210-D0391)")
         self.registry.register("D0472-D0502", oral_pathology_laboratory_service.activate_oral_pathology_laboratory, 
                             "Oral Pathology Laboratory (D0472-D0502)")
-        self.registry.register("D0411-D0999", tests_service.activate_tests_and_laboratory_examinations, 
+        self.registry.register("D0411-D0999", tests_service.activate_tests_and_examinations, 
                             "Tests and Laboratory Examinations (D0411-D0999)")
         self.registry.register("D4186", lambda x: "D4186" if "outcome assessment" in x.lower() else None, 
                             "Assessment of Patient Outcome Metrics (D4186)")
@@ -147,6 +147,7 @@ List them in order of relevance, with the most relevant first.
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+diagnostic_service = DiagnosticServices()
 # Example usage
 if __name__ == "__main__":
     async def main():

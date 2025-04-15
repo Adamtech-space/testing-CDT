@@ -3,8 +3,8 @@ import sys
 import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
-from subtopic_registry import SubtopicRegistry
+
+from sub_topic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,20 +13,17 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.Prosthodontics_Removable import (
-    CompleteDenturesServices,
-    PartialDentureServices,
-    AdjustmentsToDenturesServices,
-    RepairsToCompleteDenturesServices,
-    RepairsToPartialDenturesServices,
-    DentureRebaseProceduresServices,
-    DentureRelineProceduresServices,
-    InterimProsthesisServices,
-    OtherRemovableProstheticServices,
-    TissueConditioningServices,
-    UnspecifiedRemovableProsthodonticProcedureServices
-)
-
+from subtopics.Prosthodontics_Removable.complete_dentures import CompleteDenturesServices
+from subtopics.Prosthodontics_Removable.adjustments_to_dentures import AdjustmentsToDenturesServices
+from subtopics.Prosthodontics_Removable.denture_rebase_procedures import DentureRebaseProceduresServices
+from subtopics.Prosthodontics_Removable.interim_prosthesis import InterimProsthesisServices
+from subtopics.Prosthodontics_Removable.other_removable_prosthetic_services import OtherRemovableProstheticServices
+from subtopics.Prosthodontics_Removable.partial_denture import PartialDentureServices
+from subtopics.Prosthodontics_Removable.repairs_to_complete_dentures import RepairsToCompleteDenturesServices
+from subtopics.Prosthodontics_Removable.repairs_to_partial_dentures import RepairsToPartialDenturesServices
+from subtopics.Prosthodontics_Removable.tissue_conditioning import TissueConditioningServices
+from subtopics.Prosthodontics_Removable.unspecified_removable_prosthodontic_procedure import UnspecifiedRemovableProsthodonticProcedureServices
+from subtopics.Prosthodontics_Removable.denture_reline_procedures import DentureRelineProceduresServices
 class RemovableProsthodonticsServices:
     """Class to analyze and activate removable prosthodontics services based on dental scenarios."""
     
@@ -35,44 +32,46 @@ class RemovableProsthodonticsServices:
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
         
-        # Initialize service classes
-        self.complete_dentures = CompleteDenturesServices(self.llm_service)
-        self.partial_denture = PartialDentureServices(self.llm_service)
-        self.adjustments_to_dentures = AdjustmentsToDenturesServices(self.llm_service)
-        self.repairs_to_complete_dentures = RepairsToCompleteDenturesServices(self.llm_service)
-        self.repairs_to_partial_dentures = RepairsToPartialDenturesServices(self.llm_service)
-        self.denture_rebase_procedures = DentureRebaseProceduresServices(self.llm_service)
-        self.denture_reline_procedures = DentureRelineProceduresServices(self.llm_service)
-        self.interim_prosthesis = InterimProsthesisServices(self.llm_service)
-        self.other_removable_prosthetic_services = OtherRemovableProstheticServices(self.llm_service)
-        self.tissue_conditioning = TissueConditioningServices(self.llm_service)
-        self.unspecified_removable_prosthodontic_procedure = UnspecifiedRemovableProsthodonticProcedureServices(self.llm_service)
+        # # Initialize service classes
+        # self.complete_dentures = CompleteDenturesServices(self.llm_service)
+        # self.partial_denture = PartialDentureServices(self.llm_service)
+        # self.adjustments_to_dentures = AdjustmentsToDenturesServices(self.llm_service)
+        # self.repairs_to_complete_dentures = RepairsToCompleteDenturesServices(self.llm_service)
+        # self.repairs_to_partial_dentures = RepairsToPartialDenturesServices(self.llm_service)
+        # self.denture_rebase_procedures = DentureRebaseProceduresServices(self.llm_service)
+        # self.denture_reline_procedures = DentureRelineProceduresServices(self.llm_service)
+        # self.interim_prosthesis = InterimProsthesisServices(self.llm_service)
+        # self.other_removable_prosthetic_services = OtherRemovableProstheticServices(self.llm_service)
+        # self.tissue_conditioning = TissueConditioningServices(self.llm_service)
+        # self.unspecified_removable_prosthodontic_procedure = UnspecifiedRemovableProsthodonticProcedureServices(self.llm_service)
         
         self.registry = SubtopicRegistry()
         self._register_subtopics()
     
     def _register_subtopics(self):
         """Register all subtopics for parallel activation."""
-        self.registry.register("D5110-D5140", self.complete_dentures.activate_complete_dentures, 
+        self.registry.register("D5110-D5140", CompleteDenturesServices.activate_complete_dentures, 
                             "Complete Dentures (D5110-D5140)")
-        self.registry.register("D5211-D5286", self.partial_denture.activate_partial_denture, 
+        self.registry.register("D5211-D5286", PartialDentureServices.activate_partial_denture, 
                             "Partial Denture (D5211-D5286)")
-        self.registry.register("D5410-D5422", self.adjustments_to_dentures.activate_adjustments_to_dentures, 
+        self.registry.register("D5410-D5422", AdjustmentsToDenturesServices.activate_adjustments_to_dentures, 
                             "Adjustments to Dentures (D5410-D5422)")
-        self.registry.register("D5511-D5520", self.repairs_to_complete_dentures.activate_repairs_to_complete_dentures, 
+        self.registry.register("D5511-D5520", RepairsToCompleteDenturesServices.activate_repairs_to_complete_dentures, 
                             "Repairs to Complete Dentures (D5511-D5520)")
-        self.registry.register("D5611-D5671", self.repairs_to_partial_dentures.activate_repairs_to_partial_dentures, 
+        self.registry.register("D5611-D5671", RepairsToPartialDenturesServices.activate_repairs_to_partial_dentures, 
                             "Repairs to Partial Dentures (D5611-D5671)")
-        self.registry.register("D5710-D5725", self.denture_rebase_procedures.activate_denture_rebase_procedures, 
+        self.registry.register("D5710-D5725", DentureRebaseProceduresServices.activate_denture_rebase_procedures, 
                             "Denture Rebase Procedures (D5710-D5725)")
-        self.registry.register("D5730-D5761", self.denture_reline_procedures.activate_denture_reline_procedures, 
+        self.registry.register("D5730-D5761", DentureRelineProceduresServices.activate_denture_reline_procedures, 
                             "Denture Reline Procedures (D5730-D5761)")
-        self.registry.register("D5810-D5821", self.interim_prosthesis.activate_interim_prosthesis, 
+        self.registry.register("D5810-D5821", InterimProsthesisServices.activate_interim_prosthesis, 
                             "Interim Prosthesis (D5810-D5821)")
-        self.registry.register("D5765-D5899", self.other_removable_prosthetic_services.activate_other_removable_prosthetic_services, 
+        self.registry.register("D5765-D5899", OtherRemovableProstheticServices.activate_other_removable_prosthetic_services, 
                             "Other Removable Prosthetic Services (D5765-D5899)")
-        self.registry.register("D5765-D5899", self.tissue_conditioning.activate_tissue_conditioning, 
+        self.registry.register("D5765-D5899", TissueConditioningServices.activate_tissue_conditioning, 
                             "Tissue Conditioning (D5765-D5899)")
+        self.registry.register("D5765-D5899", UnspecifiedRemovableProsthodonticProcedureServices.activate_unspecified_removable_prosthodontic_procedure, 
+                            "Unspecified Removable Prosthodontic Procedure (D5765-D5899)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing removable prosthodontics services."""
@@ -203,6 +202,7 @@ List them in order of relevance, with the most relevant first.
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+prosthodontics_service = RemovableProsthodonticsServices()
 # Example usage
 if __name__ == "__main__":
     async def main():

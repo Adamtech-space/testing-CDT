@@ -3,8 +3,8 @@ import sys
 import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
-from subtopic_registry import SubtopicRegistry
+
+from sub_topic_registry import SubtopicRegistry
 
 # Add the project root to the path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -21,7 +21,7 @@ try:
     from subtopics.implantservices.implant_crowns import implant_crowns_service
     from subtopics.implantservices.implant_supported_prosthetics import implant_supported_prosthetics_service
     from subtopics.implantservices.other_services import other_implant_services_service
-    from subtopics.implantservices.pre_surgical import pre_surgical_service
+    from subtopics.implantservices.pre_surgical import PreSurgicalImplantServices
     from subtopics.implantservices.removable_dentures import removable_dentures_service
     from subtopics.implantservices.surgical_services import surgical_service
     
@@ -51,13 +51,13 @@ class ImplantServices:
     
     def _register_subtopics(self):
         """Register all subtopics for parallel activation."""
-        self.registry.register("D6190", pre_surgical_service.activate_pre_surgical, 
+        self.registry.register("D6190", PreSurgicalImplantServices.activate_pre_surgical, 
                             "Pre-Surgical Services (D6190)")
         self.registry.register("D6010-D6199", surgical_service.activate_surgical_services, 
                             "Surgical Services (D6010-D6199)")
         self.registry.register("D6051-D6078", implant_supported_prosthetics_service.activate_implant_supported_prosthetics, 
                             "Implant Supported Prosthetics (D6051-D6078)")
-        self.registry.register("D6110-D6119", removable_dentures_service.activate_implant_supported_removable_dentures, 
+        self.registry.register("D6110-D6119", removable_dentures_service.activate_removable_dentures, 
                             "Implant Supported Removable Dentures (D6110-D6119)")
         self.registry.register("D6090-D6095", fixed_dentures_service.activate_implant_supported_fixed_dentures, 
                             "Implant Supported Fixed Dentures (D6090-D6095)")
@@ -199,6 +199,7 @@ List them in order of relevance, with the most relevant first.
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+implant_service = ImplantServices()
 # Example usage
 if __name__ == "__main__":
     async def main():

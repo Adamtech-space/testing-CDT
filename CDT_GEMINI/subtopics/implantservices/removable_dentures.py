@@ -2,7 +2,7 @@ import os
 import sys
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+
 
 # Add the parent directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -149,6 +149,7 @@ Scenario: {{scenario}}
         print(f"\n=== IMPLANT/ABUTMENT SUPPORTED REMOVABLE DENTURES ANALYSIS RESULT ===")
         print(f"REMOVABLE DENTURES CODE: {result if result else 'None'}")
 
+removable_dentures_service = ImplantAbutmentSupportedRemovableDenturesServices()
 # Example usage
 if __name__ == "__main__":
     dentures_service = ImplantAbutmentSupportedRemovableDenturesServices()

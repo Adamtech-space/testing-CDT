@@ -5,6 +5,7 @@ from langchain.prompts import PromptTemplate
 from llm_services import generate_response, get_service, set_model, set_temperature
 from typing import Dict, Any, Optional, List
 from llm_services import OPENROUTER_MODEL, DEFAULT_TEMP
+import re
 
 load_dotenv()
 
@@ -155,6 +156,12 @@ Important Guidelines:
 
 5) For restorative procedures, pay careful attention to mention of posts, cores, buildups or similar structures used before crown placement, as these are separate billable services from the crown itself.
 
+6) CRITICAL: Always consider endodontic codes (D3000-D3999) when the scenario mentions any form of "root canal therapy", "pulpectomy", "pulpotomy", "retreatment", or any treatment related to the dental pulp or periapical tissues.
+
+7) If there is any mention of a drainage of abscess, incision, or drainage of a fistula, consider oral surgery codes (D7000-D7999).
+
+8) Remember that radiographic images (x-rays) always fall under diagnostic services (D0100-D0999), regardless of why they were taken.
+
 
 STRICT OUTPUT FORMAT - FOLLOW EXACTLY:
 
@@ -248,11 +255,64 @@ Repeat this exact format for each relevant code range. Do not add additional tex
             for code, expl, doubt in zip(range_codes, explanations, doubts)
         ]
         
+        # Check for missing important code ranges based on scenario keywords
+        self._ensure_all_code_ranges(formatted_results, scenario)
+        
         self.logger.info(f"Parsed {len(formatted_results)} code ranges")
         return {
             "formatted_results": formatted_results,
             "range_codes_string": ",".join(range_codes)
         }
+        
+    def _ensure_all_code_ranges(self, formatted_results: list, scenario: str) -> None:
+        """Ensure all relevant code ranges are included based on keywords in the scenario"""
+        scenario_lower = scenario.lower()
+        
+        # Extract current code ranges
+        current_ranges = [item["code_range"] for item in formatted_results]
+        
+        # Check for preventive services (D1000-D1999)
+        preventive_keywords = ["prophylaxis", "prophy", "cleaning", "routine recall", "fluoride", "sealant"]
+        if any(keyword in scenario_lower for keyword in preventive_keywords) and "D1000-D1999" not in current_ranges:
+            self.logger.info("Adding missing Preventive Services code range (D1000-D1999)")
+            formatted_results.append({
+                "code_range": "D1000-D1999",
+                "explanation": "The scenario mentions prophylaxis/cleaning services which are classified under preventive services.",
+                "doubt": "Added automatically based on keyword detection."
+            })
+        
+        # Check for endodontic services (D3000-D3999)
+        endodontic_keywords = ["root canal", "pulp", "endodontic", "pulpectomy", "pulpotomy", "retreatment", "periapical"]
+        if any(keyword in scenario_lower for keyword in endodontic_keywords) and "D3000-D3999" not in current_ranges:
+            self.logger.info("Adding missing Endodontic Services code range (D3000-D3999)")
+            formatted_results.append({
+                "code_range": "D3000-D3999",
+                "explanation": "The scenario mentions root canal therapy or related procedures which fall under endodontic services.",
+                "doubt": "Added automatically based on keyword detection."
+            })
+        
+        # Check for diagnostic services (D0100-D0999)
+        diagnostic_keywords = ["radiograph", "x-ray", "image", "examination", "eval", "exam"]
+        if any(keyword in scenario_lower for keyword in diagnostic_keywords) and "D0100-D0999" not in current_ranges:
+            self.logger.info("Adding missing Diagnostic Services code range (D0100-D0999)")
+            formatted_results.append({
+                "code_range": "D0100-D0999",
+                "explanation": "The scenario mentions radiographic imaging or examination procedures.",
+                "doubt": "Added automatically based on keyword detection."
+            })
+            
+        # Check for oral surgery (D7000-D7999)
+        surgery_keywords = ["extraction", "remove tooth", "incision", "drainage", "biopsy", "abscess", "fistula"]
+        has_surgery_keywords = any(keyword in scenario_lower for keyword in surgery_keywords)
+        has_pus_keywords = "pus" in scenario_lower or "draining" in scenario_lower
+        
+        if (has_surgery_keywords or has_pus_keywords) and "D7000-D7999" not in current_ranges:
+            self.logger.info("Adding missing Oral Surgery code range (D7000-D7999)")
+            formatted_results.append({
+                "code_range": "D7000-D7999",
+                "explanation": "The scenario mentions surgical procedures, extraction, or drainage of infection.",
+                "doubt": "Added automatically based on keyword detection."
+            })
 
     def process(self, scenario: str) -> Dict[str, Any]:
         """Process a dental scenario and return CDT classifications"""
