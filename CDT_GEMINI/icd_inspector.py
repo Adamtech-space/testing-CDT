@@ -3,7 +3,7 @@ import logging
 from dotenv import load_dotenv
 from llm_services import generate_response, get_service, set_model, set_temperature
 from typing import Dict, Any, Optional
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from llm_services import OPENROUTER_MODEL, DEFAULT_TEMP
 
 # Load environment variables
 load_dotenv()
@@ -47,7 +47,7 @@ CODES: K05.1, Z91.89
 EXPLANATION: K05.1 (Chronic gingivitis) is appropriate as the scenario describes inflammation of the gums that has persisted for several months. Z91.89 (Other specified personal risk factors) is included to document the patient's tobacco use which is significant for their periodontal condition. K05.2 was rejected because while there is gum disease, there is no evidence of destruction of the supporting structures required for periodontitis diagnosis.
 """
 
-    def __init__(self, model: str = DEFAULT_MODEL, temperature: float = DEFAULT_TEMP):
+    def __init__(self, model: str = OPENROUTER_MODEL, temperature: float = DEFAULT_TEMP):
         """Initialize the inspector with model and temperature settings"""
         self.service = get_service()
         self.configure(model, temperature)

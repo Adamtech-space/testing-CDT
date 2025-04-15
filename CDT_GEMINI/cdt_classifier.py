@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from llm_services import generate_response, get_service, set_model, set_temperature
 from typing import Dict, Any, Optional, List
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from llm_services import OPENROUTER_MODEL, DEFAULT_TEMP
 
 load_dotenv()
 
@@ -15,7 +15,6 @@ load_dotenv()
 class CDTClassifier:
     """Class to handle CDT code classification for dental scenarios"""
     
-    # DEFAULT_MODEL = "google/gemini-2.5-pro-preview-03-25"
     # DEFAULT_TEMP = 0.0
     
     PROMPT_TEMPLATE = """
@@ -174,7 +173,7 @@ CODE_RANGE: D0100-D0999 - Diagnostic Services
 Repeat this exact format for each relevant code range. Do not add additional text, comments, or summaries outside of this format.
         """
 
-    def __init__(self, model: str = DEFAULT_MODEL, temperature: float = DEFAULT_TEMP):
+    def __init__(self, model: str = OPENROUTER_MODEL, temperature: float = DEFAULT_TEMP):
         """Initialize the classifier with model and temperature settings"""
         self.service = get_service()
         self.configure(model, temperature)

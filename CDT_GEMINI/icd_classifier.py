@@ -3,7 +3,7 @@ import logging
 from dotenv import load_dotenv
 from llm_services import generate_response, get_service, set_model, set_temperature
 from typing import Dict, Any, Optional, List
-from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from llm_services import OPENROUTER_MODEL, DEFAULT_TEMP
 # Import all ICD topic functions 
 from icdtopics.dentalencounters import activate_dental_encounters
 from icdtopics.dentalcaries import activate_dental_caries
@@ -91,7 +91,7 @@ CATEGORY: [Category Number and Name, e.g., "2. Dental Caries"]
 
 """
 
-    def __init__(self, model: str = DEFAULT_MODEL, temperature: float = DEFAULT_TEMP):
+    def __init__(self, model: str = OPENROUTER_MODEL, temperature: float = DEFAULT_TEMP):
         """Initialize the classifier with model and temperature settings"""
         self.service = get_service()
         self.configure(model, temperature)

@@ -16,16 +16,15 @@ load_dotenv()
 
 # OpenRouter configuration
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.5-pro-preview-03-25")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo-0613")
 OPENROUTER_TEMPERATURE = float(os.getenv("OPENROUTER_TEMPERATURE", "0.0"))
 OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL", "")
 OPENROUTER_SITE_NAME = os.getenv("OPENROUTER_SITE_NAME", "")
-DEFAULT_MODEL = "google/gemini-2.5-pro-preview-03-25"
 DEFAULT_TEMP = 0.0
 
 class LLMService:
     def __init__(self, temperature=DEFAULT_TEMP, max_retries=3, 
-                 retry_delay=2, model=DEFAULT_MODEL):
+                 retry_delay=2, model=OPENROUTER_MODEL):
         if not OPENROUTER_API_KEY:
             raise ValueError("OpenRouter API key not found in environment variables")
         
