@@ -11,11 +11,18 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.Periodontics import (
-    activate_surgical_services,
-    activate_non_surgical_services,
-    activate_other_periodontal_services,
-)
+
+# Import subtopics with fallback mechanism
+try:
+    from subtopics.Periodontics.surgical_services import surgical_services
+    from subtopics.Periodontics.non_surgical_services import non_surgical_services
+    from subtopics.Periodontics.other_periodontal_services import other_periodontal_services
+except ImportError:
+    print("Warning: Could not import subtopics for Periodontics. Using fallback functions.")
+    # Define fallback functions if needed
+    def activate_surgical_services(scenario): return None
+    def activate_non_surgical_services(scenario): return None
+    def activate_other_periodontal_services(scenario): return None
 
 class PeriodonticServices:
     """Class to analyze and activate periodontic services based on dental scenarios."""
@@ -90,9 +97,9 @@ Example: "D4322-D4381, D4910-D4999, D4210-D4286"
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D4210-D4286", activate_surgical_services, "Surgical Services (D4210-D4286)"),
-                ("D4322-D4381", activate_non_surgical_services, "Non-Surgical Services (D4322-D4381)"),
-                ("D4910-D4999", activate_other_periodontal_services, "Other Periodontal Services (D4910-D4999)")
+                ("D4210-D4286", surgical_services.activate_surgical_services, "Surgical Services (D4210-D4286)"),
+                ("D4322-D4381", non_surgical_services.activate_non_surgical_services, "Non-Surgical Services (D4322-D4381)"),
+                ("D4910-D4999", other_periodontal_services.activate_other_periodontal_services, "Other Periodontal Services (D4910-D4999)")
             ]
             
             for code_range, activate_func, subtopic_name in subtopic_map:
@@ -127,8 +134,9 @@ Example: "D4322-D4381, D4910-D4999, D4210-D4286"
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+
+periodontic_service = PeriodonticServices()
 # Example usage
 if __name__ == "__main__":
-    periodontic_service = PeriodonticServices()
     scenario = input("Enter a periodontic scenario: ")
     periodontic_service.run_analysis(scenario)

@@ -11,12 +11,20 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.Orthodontics import (
-    activate_limited_orthodontic_treatment,
-    activate_comprehensive_orthodontic_treatment,
-    activate_minor_treatment_harmful_habits,
-    activate_other_orthodontic_services
-)
+
+# Import subtopics with fallback mechanism
+try:
+    from subtopics.Orthodontics.limited_orthodontic_treatment import limited_orthodontic_treatment
+    from subtopics.Orthodontics.comprehensive_orthodontic_treatment import comprehensive_orthodontic_treatment
+    from subtopics.Orthodontics.minor_treatment_harmful_habits import minor_treatment_harmful_habits
+    from subtopics.Orthodontics.other_orthodontic_services import other_orthodontic_services
+except ImportError:
+    print("Warning: Could not import subtopics for Orthodontics. Using fallback functions.")
+    # Define fallback functions if needed
+    def activate_limited_orthodontic_treatment(scenario): return None
+    def activate_comprehensive_orthodontic_treatment(scenario): return None
+    def activate_minor_treatment_harmful_habits(scenario): return None
+    def activate_other_orthodontic_services(scenario): return None
 
 class OrthodonticServices:
     """Class to analyze and activate orthodontic services based on dental scenarios."""
@@ -96,10 +104,10 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D8010-D8040", activate_limited_orthodontic_treatment, "Limited Orthodontic Treatment (D8010-D8040)"),
-                ("D8070-D8090", activate_comprehensive_orthodontic_treatment, "Comprehensive Orthodontic Treatment (D8070-D8090)"),
-                ("D8210-D8220", activate_minor_treatment_harmful_habits, "Minor Treatment to Control Harmful Habits (D8210-D8220)"),
-                ("D8660-D8999", activate_other_orthodontic_services, "Other Orthodontic Services (D8660-D8999)")
+                ("D8010-D8040", limited_orthodontic_treatment.activate_limited_orthodontic_treatment, "Limited Orthodontic Treatment (D8010-D8040)"),
+                ("D8070-D8090", comprehensive_orthodontic_treatment.activate_comprehensive_orthodontic_treatment, "Comprehensive Orthodontic Treatment (D8070-D8090)"),
+                ("D8210-D8220", minor_treatment_harmful_habits.activate_minor_treatment_harmful_habits, "Minor Treatment to Control Harmful Habits (D8210-D8220)"),
+                ("D8660-D8999", other_orthodontic_services.activate_other_orthodontic_services, "Other Orthodontic Services (D8660-D8999)")
             ]
             
             for code_range, activate_func, subtopic_name in subtopic_map:
@@ -134,8 +142,9 @@ List them in order of relevance, with the most relevant first.
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
+
+orthodontic_service = OrthodonticServices()
 # Example usage
 if __name__ == "__main__":
-    orthodontic_service = OrthodonticServices()
     scenario = input("Enter an orthodontic scenario: ")
     orthodontic_service.run_analysis(scenario)
