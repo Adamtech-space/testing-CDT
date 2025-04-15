@@ -95,6 +95,8 @@ SCENARIO: {{scenario}}
         print(f"\n=== PROFESSIONAL CONSULTATION ANALYSIS RESULT ===")
         print(f"PROFESSIONAL CONSULTATION CODE: {result if result else 'None'}")
 
+
+professional_consultation_service = ProfessionalConsultationServices()
 # Example usage
 if __name__ == "__main__":
     consultation_service = ProfessionalConsultationServices()

@@ -108,6 +108,7 @@ SCENARIO: {{scenario}}
         print(f"\n=== PROFESSIONAL VISITS ANALYSIS RESULT ===")
         print(f"PROFESSIONAL VISITS CODE: {result if result else 'None'}")
 
+professional_visits_service = ProfessionalVisitsServices()
 # Example usage
 if __name__ == "__main__":
     visits_service = ProfessionalVisitsServices()

@@ -221,6 +221,8 @@ SCENARIO: {{scenario}}
         print(f"\n=== MISCELLANEOUS SERVICES ANALYSIS RESULT ===")
         print(f"MISCELLANEOUS SERVICES CODE: {result if result else 'None'}")
 
+
+misc_service = MiscellaneousServices()
 # Example usage
 if __name__ == "__main__":
     misc_service = MiscellaneousServices()

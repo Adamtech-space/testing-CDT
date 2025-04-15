@@ -10,15 +10,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import subtopics with fallback mechanism
 try:
-    from subtopics.AdjunctiveGeneralServices import (
-        activate_unclassified_treatment,
-        activate_anesthesia,
-        activate_professional_consultation,
-        activate_professional_visits,
-        activate_drugs,
-        activate_miscellaneous_services,
-        activate_non_clinical_procedures
-    )
+    from subtopics.AdjunctiveGeneralServices.anesthesia import anesthesia_service
+    from subtopics.AdjunctiveGeneralServices.drugs import drugs_service
+    from subtopics.AdjunctiveGeneralServices.miscellaneous_services import misc_service
+    from subtopics.AdjunctiveGeneralServices.non_clinical_procedures import non_clinical_service
+    from subtopics.AdjunctiveGeneralServices.professional_consultation import consultation_service
+    from subtopics.AdjunctiveGeneralServices.professional_visits import visits_service
+    from subtopics.AdjunctiveGeneralServices.unclassified_treatment import unclassified_service
 except ImportError:
     print("Warning: Could not import subtopics for AdjunctiveGeneralServices. Using fallback functions.")
     # Define fallback functions if needed
@@ -185,13 +183,13 @@ Example: "D9210-D9248, D9110-D9130, D9610-D9630"
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D9110-D9130", activate_unclassified_treatment, "Unclassified Treatment (D9110-D9130)"),
-                ("D9210-D9248", activate_anesthesia, "Anesthesia (D9210-D9248)"),
-                ("D9310-D9311", activate_professional_consultation, "Professional Consultation (D9310-D9311)"),
-                ("D9410-D9450", activate_professional_visits, "Professional Visits (D9410-D9450)"),
-                ("D9610-D9630", activate_drugs, "Drugs (D9610-D9630)"),
-                ("D9910-D9973", activate_miscellaneous_services, "Miscellaneous Services (D9910-D9973)"),
-                ("D9961-D9999", activate_non_clinical_procedures, "Non-clinical Procedures (D9961-D9999)")
+                ("D9110-D9130", unclassified_service.activate_unclassified_treatment, "Unclassified Treatment (D9110-D9130)"),
+                ("D9210-D9248", anesthesia_service.activate_anesthesia, "Anesthesia (D9210-D9248)"),
+                ("D9310-D9311", consultation_service.activate_professional_consultation, "Professional Consultation (D9310-D9311)"),
+                ("D9410-D9450", visits_service.activate_professional_visits, "Professional Visits (D9410-D9450)"),
+                ("D9610-D9630", drugs_service.activate_drugs, "Drugs (D9610-D9630)"),
+                ("D9910-D9973", misc_service.activate_miscellaneous_services, "Miscellaneous Services (D9910-D9973)"),
+                ("D9961-D9999", non_clinical_service.activate_non_clinical_procedures, "Non-clinical Procedures (D9961-D9999)")
             ]
             
             for code_range, activate_func, subtopic_name in subtopic_map:
