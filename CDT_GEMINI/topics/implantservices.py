@@ -12,18 +12,17 @@ from topics.prompt import PROMPT
 
 # Import subtopics with fallback mechanism
 try:
-    from subtopics.implantservices import (
-        activate_pre_surgical,
-        activate_surgical_services,
-        activate_implant_supported_prosthetics,
-        activate_implant_supported_removable_dentures,
-        activate_implant_supported_fixed_dentures,
-        activate_single_crowns_abutment,
-        activate_single_crowns_implant,
-        activate_fpd_abutment,
-        activate_fpd_implant,
-        activate_other_implant_services
-    )
+    from subtopics.implantservices.abutment_crowns import abutment_crowns_service
+    from subtopics.implantservices.fixed_dentures import fixed_dentures_service
+    from subtopics.implantservices.fpd_implant import fpd_implant_service
+    from subtopics.implantservices.fpd_abutment import fpd_abutment_service
+    from subtopics.implantservices.implant_crowns import implant_crowns_service
+    from subtopics.implantservices.implant_supported_prosthetics import implant_supported_prosthetics_service
+    from subtopics.implantservices.other_services import other_implant_services_service
+    from subtopics.implantservices.pre_surgical import pre_surgical_service
+    from subtopics.implantservices.removable_dentures import removable_dentures_service
+    from subtopics.implantservices.surgical_services import surgical_service
+    
 except ImportError:
     print("Warning: Could not import subtopics for implantservices. Using fallback functions.")
     # Define fallback functions
@@ -152,16 +151,16 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D6190", activate_pre_surgical, "Pre-Surgical Services (D6190)"),
-                ("D6010-D6199", activate_surgical_services, "Surgical Services (D6010-D6199)"),
-                ("D6051-D6078", activate_implant_supported_prosthetics, "Implant Supported Prosthetics (D6051-D6078)"),
-                ("D6110-D6119", activate_implant_supported_removable_dentures, "Implant Supported Removable Dentures (D6110-D6119)"),
-                ("D6090-D6095", activate_implant_supported_fixed_dentures, "Implant Supported Fixed Dentures (D6090-D6095)"),
-                ("D6058-D6077", activate_single_crowns_abutment, "Single Crowns, Abutment Supported (D6058-D6077)"),
-                ("D6065-D6067", activate_single_crowns_implant, "Single Crowns, Implant Supported (D6065-D6067)"),
-                ("D6071-D6074", activate_fpd_abutment, "Fixed Partial Denture, Abutment Supported (D6071-D6074)"),
-                ("D6075", activate_fpd_implant, "Fixed Partial Denture, Implant Supported (D6075)"),
-                ("D6080-D6199", activate_other_implant_services, "Other Implant Services (D6080-D6199)")
+                ("D6190", pre_surgical_service.activate_pre_surgical, "Pre-Surgical Services (D6190)"),
+                ("D6010-D6199", surgical_service.activate_surgical_services, "Surgical Services (D6010-D6199)"),
+                ("D6051-D6078", implant_supported_prosthetics_service.activate_implant_supported_prosthetics, "Implant Supported Prosthetics (D6051-D6078)"),
+                ("D6110-D6119", removable_dentures_service.activate_implant_supported_removable_dentures, "Implant Supported Removable Dentures (D6110-D6119)"),
+                ("D6090-D6095", fixed_dentures_service.activate_implant_supported_fixed_dentures, "Implant Supported Fixed Dentures (D6090-D6095)"),
+                ("D6058-D6077", abutment_crowns_service.activate_single_crowns_abutment, "Single Crowns, Abutment Supported (D6058-D6077)"),
+                ("D6065-D6067", implant_crowns_service.activate_single_crowns_implant, "Single Crowns, Implant Supported (D6065-D6067)"),
+                ("D6071-D6074", fpd_abutment_service.activate_fpd_abutment, "Fixed Partial Denture, Abutment Supported (D6071-D6074)"),
+                ("D6075", fpd_implant_service.activate_fpd_implant, "Fixed Partial Denture, Implant Supported (D6075)"),
+                ("D6080-D6199", other_implant_services_service.activate_other_implant_services, "Other Implant Services (D6080-D6199)")
             ]
             
             for code_range, activate_func, subtopic_name in subtopic_map:

@@ -11,10 +11,8 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.Maxillofacial_Prosthetics import (
-    activate_general_prosthetics,
-    activate_carriers
-)
+from subtopics.Maxillofacial_Prosthetics.general_prosthetics import general_prosthetics_service
+from subtopics.Maxillofacial_Prosthetics.carriers import carriers_service
 
 class MaxillofacialProstheticsServices:
     """Class to analyze and activate maxillofacial prosthetics services based on dental scenarios."""
@@ -82,8 +80,8 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D5992-D5937", activate_general_prosthetics, "General Maxillofacial Prosthetics (D5992-D5937)"),
-                ("D5986-D5999", activate_carriers, "Carriers (D5986-D5999)")
+                ("D5992-D5937", general_prosthetics_service.activate_general_prosthetics, "General Maxillofacial Prosthetics (D5992-D5937)"),
+                ("D5986-D5999", carriers_service.activate_carriers, "Carriers (D5986-D5999)")
             ]
             
             for code_range, activate_func, subtopic_name in subtopic_map:
