@@ -11,13 +11,11 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.diagnostics import (
-    activate_clinical_oral_evaluations,
-    activate_pre_diagnostic_services,
-    activate_diagnostic_imaging,
-    activate_oral_pathology_laboratory,
-    activate_tests_and_laboratory_examinations,
-)
+from subtopics.diagnostics.clinicaloralevaluation import clinical_oral_evaluations_service
+from subtopics.diagnostics.diagnosticimaging import diagnostic_imaging_service
+from subtopics.diagnostics.oralpathologylaboratory import oral_pathology_laboratory_service
+from subtopics.diagnostics.prediagnosticservices import prediagnostic_service
+from subtopics.diagnostics.testsandexaminations import tests_service
 
 class DiagnosticServices:
     """Class to analyze and activate diagnostic services based on dental scenarios."""
@@ -109,11 +107,11 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D0120-D0180", activate_clinical_oral_evaluations, "Clinical Oral Evaluations (D0120-D0180)"),
-                ("D0190-D0191", activate_pre_diagnostic_services, "Pre-diagnostic Services (D0190-D0191)"),
-                ("D0210-D0391", activate_diagnostic_imaging, "Diagnostic Imaging (D0210-D0391)"),
-                ("D0472-D0502", activate_oral_pathology_laboratory, "Oral Pathology Laboratory (D0472-D0502)"),
-                ("D0411-D0999", activate_tests_and_laboratory_examinations, "Tests and Laboratory Examinations (D0411-D0999)"),
+                ("D0120-D0180", clinical_oral_evaluations_service.activate_clinical_oral_evaluations, "Clinical Oral Evaluations (D0120-D0180)"),
+                ("D0190-D0191", prediagnostic_service.activate_prediagnostic_services, "Pre-diagnostic Services (D0190-D0191)"),
+                ("D0210-D0391", diagnostic_imaging_service.activate_diagnostic_imaging, "Diagnostic Imaging (D0210-D0391)"),
+                ("D0472-D0502", oral_pathology_laboratory_service.activate_oral_pathology_laboratory, "Oral Pathology Laboratory (D0472-D0502)"),
+                ("D0411-D0999", tests_service.activate_tests_and_laboratory_examinations, "Tests and Laboratory Examinations (D0411-D0999)"),
                 ("D4186", lambda x: "D4186" if "outcome assessment" in x.lower() else None, "Assessment of Patient Outcome Metrics (D4186)")
             ]
             
