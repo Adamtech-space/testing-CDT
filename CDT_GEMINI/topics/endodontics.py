@@ -14,17 +14,15 @@ from topics.prompt import PROMPT
 
 # Import subtopics with fallback mechanism
 try:
-    from subtopics.Endodontics import (
-        activate_pulp_capping,
-        activate_pulpotomy,
-        activate_primary_teeth_therapy,
-        activate_endodontic_therapy,
-        activate_endodontic_retreatment,
-        activate_apexification,
-        activate_pulpal_regeneration,
-        activate_apicoectomy,
-        activate_other_endodontic
-    )
+    from subtopics.Endodontics.apexification import apexification_service
+    from subtopics.Endodontics.apicoectomy import apicoectomy_service
+    from subtopics.Endodontics.endodonticretreatment import endodontic_retreatment_service
+    from subtopics.Endodontics.endodontictherapy import endodontic_therapy_service
+    from subtopics.Endodontics.otherendodontic import other_endodontic_service
+    from subtopics.Endodontics.pulpcapping import pulp_capping_service
+    from subtopics.Endodontics.pulpotomy import pulpotomy_service
+    from subtopics.Endodontics.primaryteeth import primary_teeth_service
+    from subtopics.Endodontics.pulpalregeneration import pulpal_regeneration_service
 except ImportError:
     print("Warning: Could not import subtopics for Endodontics. Using fallback functions.")
     # Define fallback functions
@@ -146,15 +144,15 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D3110-D3120", activate_pulp_capping, "Pulp Capping (D3110-D3120)"),
-                ("D3220-D3222", activate_pulpotomy, "Pulpotomy (D3220-D3222)"),
-                ("D3230-D3240", activate_primary_teeth_therapy, "Endodontic Therapy on Primary Teeth (D3230-D3240)"),
-                ("D3310-D3333", activate_endodontic_therapy, "Endodontic Therapy (D3310-D3333)"),
-                ("D3346-D3348", activate_endodontic_retreatment, "Endodontic Retreatment (D3346-D3348)"),
-                ("D3351", activate_apexification, "Apexification/Recalcification (D3351)"),
-                ("D3355-D3357", activate_pulpal_regeneration, "Pulpal Regeneration (D3355-D3357)"),
-                ("D3410-D3470", activate_apicoectomy, "Apicoectomy/Periradicular Services (D3410-D3470)"),
-                ("D3910-D3999", activate_other_endodontic, "Other Endodontic Procedures (D3910-D3999)")
+                ("D3110-D3120", pulpal_regeneration_service.activate_pulp_capping, "Pulp Capping (D3110-D3120)"),
+                ("D3220-D3222", pulpotomy_service.activate_pulpotomy, "Pulpotomy (D3220-D3222)"),
+                ("D3230-D3240", primary_teeth_service.activate_primary_teeth_therapy, "Endodontic Therapy on Primary Teeth (D3230-D3240)"),
+                ("D3310-D3333", endodontic_therapy_service.activate_endodontic_therapy, "Endodontic Therapy (D3310-D3333)"),
+                ("D3346-D3348", endodontic_retreatment_service.activate_endodontic_retreatment, "Endodontic Retreatment (D3346-D3348)"),
+                ("D3351", apexification_service.activate_apexification, "Apexification/Recalcification (D3351)"),
+                ("D3355-D3357", pulpal_regeneration_service.activate_pulpal_regeneration, "Pulpal Regeneration (D3355-D3357)"),
+                ("D3410-D3470", apicoectomy_service.activate_apicoectomy, "Apicoectomy/Periradicular Services (D3410-D3470)"),
+                ("D3910-D3999", other_endodontic_service.activate_other_endodontic, "Other Endodontic Procedures (D3910-D3999)")
             ]
             
             for code_range, activate_func, subtopic_name in subtopic_map:
