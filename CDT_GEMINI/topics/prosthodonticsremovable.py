@@ -12,15 +12,17 @@ sys.path.append(root_dir)
 # Import modules
 from topics.prompt import PROMPT
 from subtopics.Prosthodontics_Removable import (
-    activate_complete_dentures,
-    activate_partial_denture,
-    activate_adjustments_to_dentures,
-    activate_repairs_to_complete_dentures,
-    activate_repairs_to_partial_dentures,
-    activate_denture_rebase_procedures,
-    activate_denture_reline_procedures,
-    activate_interim_prosthesis,
-    activate_other_removable_prosthetic_services
+    CompleteDenturesServices,
+    PartialDentureServices,
+    AdjustmentsToDenturesServices,
+    RepairsToCompleteDenturesServices,
+    RepairsToPartialDenturesServices,
+    DentureRebaseProceduresServices,
+    DentureRelineProceduresServices,
+    InterimProsthesisServices,
+    OtherRemovableProstheticServices,
+    TissueConditioningServices,
+    UnspecifiedRemovableProsthodonticProcedureServices
 )
 
 class RemovableProsthodonticsServices:
@@ -30,6 +32,19 @@ class RemovableProsthodonticsServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        
+        # Initialize service classes
+        self.complete_dentures = CompleteDenturesServices(self.llm_service)
+        self.partial_denture = PartialDentureServices(self.llm_service)
+        self.adjustments_to_dentures = AdjustmentsToDenturesServices(self.llm_service)
+        self.repairs_to_complete_dentures = RepairsToCompleteDenturesServices(self.llm_service)
+        self.repairs_to_partial_dentures = RepairsToPartialDenturesServices(self.llm_service)
+        self.denture_rebase_procedures = DentureRebaseProceduresServices(self.llm_service)
+        self.denture_reline_procedures = DentureRelineProceduresServices(self.llm_service)
+        self.interim_prosthesis = InterimProsthesisServices(self.llm_service)
+        self.other_removable_prosthetic_services = OtherRemovableProstheticServices(self.llm_service)
+        self.tissue_conditioning = TissueConditioningServices(self.llm_service)
+        self.unspecified_removable_prosthodontic_procedure = UnspecifiedRemovableProsthodonticProcedureServices(self.llm_service)
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing removable prosthodontics services."""
@@ -139,21 +154,21 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D5110-D5140", activate_complete_dentures, "Complete Dentures (D5110-D5140)"),
-                ("D5211-D5286", activate_partial_denture, "Partial Denture (D5211-D5286)"),
-                ("D5410-D5422", activate_adjustments_to_dentures, "Adjustments to Dentures (D5410-D5422)"),
-                ("D5511-D5520", activate_repairs_to_complete_dentures, "Repairs to Complete Dentures (D5511-D5520)"),
-                ("D5611-D5671", activate_repairs_to_partial_dentures, "Repairs to Partial Dentures (D5611-D5671)"),
-                ("D5710-D5725", activate_denture_rebase_procedures, "Denture Rebase Procedures (D5710-D5725)"),
-                ("D5730-D5761", activate_denture_reline_procedures, "Denture Reline Procedures (D5730-D5761)"),
-                ("D5810-D5821", activate_interim_prosthesis, "Interim Prosthesis (D5810-D5821)"),
-                ("D5765-D5899", activate_other_removable_prosthetic_services, "Other Removable Prosthetic Services (D5765-D5899)")
+                ("D5110-D5140", self.complete_dentures.activate_complete_dentures, "Complete Dentures (D5110-D5140)"),
+                ("D5211-D5286", self.partial_denture.activate_partial_denture, "Partial Denture (D5211-D5286)"),
+                ("D5410-D5422", self.adjustments_to_dentures.activate_adjustments_to_dentures, "Adjustments to Dentures (D5410-D5422)"),
+                ("D5511-D5520", self.repairs_to_complete_dentures.activate_repairs_to_complete_dentures, "Repairs to Complete Dentures (D5511-D5520)"),
+                ("D5611-D5671", self.repairs_to_partial_dentures.activate_repairs_to_partial_dentures, "Repairs to Partial Dentures (D5611-D5671)"),
+                ("D5710-D5725", self.denture_rebase_procedures.activate_denture_rebase_procedures, "Denture Rebase Procedures (D5710-D5725)"),
+                ("D5730-D5761", self.denture_reline_procedures.activate_denture_reline_procedures, "Denture Reline Procedures (D5730-D5761)"),
+                ("D5810-D5821", self.interim_prosthesis.activate_interim_prosthesis, "Interim Prosthesis (D5810-D5821)"),
+                ("D5765-D5899", self.other_removable_prosthetic_services.activate_other_removable_prosthetic_services, "Other Removable Prosthetic Services (D5765-D5899)")
             ]
             
-            for code_range, activate_func, subtopic_name in subtopic_map:
+            for code_range, activate_method, subtopic_name in subtopic_map:
                 if code_range in prosthodontics_result:
                     print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
+                    code = activate_method(scenario)
                     if code:
                         specific_codes.append(code)
                         activated_subtopics.append(subtopic_name)
