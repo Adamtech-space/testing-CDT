@@ -12,10 +12,10 @@ sys.path.append(root_dir)
 # Import modules
 from topics.prompt import PROMPT
 from subtopics.Prosthodontics_Fixed import (
-    activate_fixed_partial_denture_pontics,
-    activate_fixed_partial_denture_retainers_inlays_onlays,
-    activate_fixed_partial_denture_retainers_crowns,
-    activate_other_fixed_partial_denture_services
+    FixedPartialDenturePonticsServices,
+    FixedPartialDentureRetainersInlaysOnlaysServices,
+    FixedPartialDentureRetainersCrownsServices,
+    OtherFixedPartialDentureServicesServices
 )
 
 class FixedProsthodonticsServices:
@@ -25,6 +25,12 @@ class FixedProsthodonticsServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        
+        # Initialize service classes
+        self.fixed_partial_denture_pontics = FixedPartialDenturePonticsServices(self.llm_service)
+        self.fixed_partial_denture_retainers_inlays_onlays = FixedPartialDentureRetainersInlaysOnlaysServices(self.llm_service)
+        self.fixed_partial_denture_retainers_crowns = FixedPartialDentureRetainersCrownsServices(self.llm_service)
+        self.other_fixed_partial_denture_services = OtherFixedPartialDentureServicesServices(self.llm_service)
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing fixed prosthodontics services."""
@@ -96,16 +102,16 @@ List them in order of relevance, with the most relevant first.
             
             # Check for each subtopic and activate if applicable
             subtopic_map = [
-                ("D6205-D6253", activate_fixed_partial_denture_pontics, "Fixed Partial Denture Pontics (D6205-D6253)"),
-                ("D6545-D6634", activate_fixed_partial_denture_retainers_inlays_onlays, "Fixed Partial Denture Retainers — Inlays/Onlays (D6545-D6634)"),
-                ("D6710-D6793", activate_fixed_partial_denture_retainers_crowns, "Fixed Partial Denture Retainers — Crowns (D6710-D6793)"),
-                ("D6920-D6999", activate_other_fixed_partial_denture_services, "Other Fixed Partial Denture Services (D6920-D6999)")
+                ("D6205-D6253", self.fixed_partial_denture_pontics.activate_fixed_partial_denture_pontics, "Fixed Partial Denture Pontics (D6205-D6253)"),
+                ("D6545-D6634", self.fixed_partial_denture_retainers_inlays_onlays.activate_fixed_partial_denture_retainers_inlays_onlays, "Fixed Partial Denture Retainers — Inlays/Onlays (D6545-D6634)"),
+                ("D6710-D6793", self.fixed_partial_denture_retainers_crowns.activate_fixed_partial_denture_retainers_crowns, "Fixed Partial Denture Retainers — Crowns (D6710-D6793)"),
+                ("D6920-D6999", self.other_fixed_partial_denture_services.activate_other_fixed_partial_denture_services, "Other Fixed Partial Denture Services (D6920-D6999)")
             ]
             
-            for code_range, activate_func, subtopic_name in subtopic_map:
+            for code_range, activate_method, subtopic_name in subtopic_map:
                 if code_range in prosthodontics_result:
                     print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
+                    code = activate_method(scenario)
                     if code:
                         specific_codes.append(code)
                         activated_subtopics.append(subtopic_name)
