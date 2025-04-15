@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -25,12 +27,26 @@ class FixedProsthodonticsServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
         
         # Initialize service classes
         self.fixed_partial_denture_pontics = FixedPartialDenturePonticsServices(self.llm_service)
         self.fixed_partial_denture_retainers_inlays_onlays = FixedPartialDentureRetainersInlaysOnlaysServices(self.llm_service)
         self.fixed_partial_denture_retainers_crowns = FixedPartialDentureRetainersCrownsServices(self.llm_service)
         self.other_fixed_partial_denture_services = OtherFixedPartialDentureServicesServices(self.llm_service)
+        
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D6205-D6253", self.fixed_partial_denture_pontics.activate_fixed_partial_denture_pontics, 
+                            "Fixed Partial Denture Pontics (D6205-D6253)")
+        self.registry.register("D6545-D6634", self.fixed_partial_denture_retainers_inlays_onlays.activate_fixed_partial_denture_retainers_inlays_onlays, 
+                            "Fixed Partial Denture Retainers — Inlays/Onlays (D6545-D6634)")
+        self.registry.register("D6710-D6793", self.fixed_partial_denture_retainers_crowns.activate_fixed_partial_denture_retainers_crowns, 
+                            "Fixed Partial Denture Retainers — Crowns (D6710-D6793)")
+        self.registry.register("D6920-D6999", self.other_fixed_partial_denture_services.activate_other_fixed_partial_denture_services, 
+                            "Other Fixed Partial Denture Services (D6920-D6999)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing fixed prosthodontics services."""
@@ -85,8 +101,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_prosthodontics_fixed: {str(e)}")
             return ""
     
-    def activate_prosthodontics_fixed(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_prosthodontics_fixed(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             prosthodontics_result = self.analyze_prosthodontics_fixed(scenario)
@@ -96,44 +112,27 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Prosthodontics Fixed Result in activate_prosthodontics_fixed: {prosthodontics_result}")
             
-            # Process specific prosthodontics subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, prosthodontics_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D6205-D6253", self.fixed_partial_denture_pontics.activate_fixed_partial_denture_pontics, "Fixed Partial Denture Pontics (D6205-D6253)"),
-                ("D6545-D6634", self.fixed_partial_denture_retainers_inlays_onlays.activate_fixed_partial_denture_retainers_inlays_onlays, "Fixed Partial Denture Retainers — Inlays/Onlays (D6545-D6634)"),
-                ("D6710-D6793", self.fixed_partial_denture_retainers_crowns.activate_fixed_partial_denture_retainers_crowns, "Fixed Partial Denture Retainers — Crowns (D6710-D6793)"),
-                ("D6920-D6999", self.other_fixed_partial_denture_services.activate_other_fixed_partial_denture_services, "Other Fixed Partial Denture Services (D6920-D6999)")
-            ]
-            
-            for code_range, activate_method, subtopic_name in subtopic_map:
-                if code_range in prosthodontics_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_method(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Fixed Partial Denture Pontics (D6205-D6253)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": prosthodontics_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in prosthodontics fixed analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_prosthodontics_fixed(scenario)
+        result = await self.activate_prosthodontics_fixed(scenario)
         print(f"\n=== FIXED PROSTHODONTICS ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
@@ -142,6 +141,9 @@ List them in order of relevance, with the most relevant first.
 
 # Example usage
 if __name__ == "__main__":
-    prosthodontics_service = FixedProsthodonticsServices()
-    scenario = input("Enter a fixed prosthodontics dental scenario: ")
-    prosthodontics_service.run_analysis(scenario)
+    async def main():
+        prosthodontics_service = FixedProsthodonticsServices()
+        scenario = input("Enter a fixed prosthodontics dental scenario: ")
+        await prosthodontics_service.run_analysis(scenario)
+    
+    asyncio.run(main())

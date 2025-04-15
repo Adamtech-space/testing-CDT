@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,6 +35,19 @@ class OrthodonticServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D8010-D8040", limited_orthodontic_treatment.activate_limited_orthodontic_treatment, 
+                            "Limited Orthodontic Treatment (D8010-D8040)")
+        self.registry.register("D8070-D8090", comprehensive_orthodontic_treatment.activate_comprehensive_orthodontic_treatment, 
+                            "Comprehensive Orthodontic Treatment (D8070-D8090)")
+        self.registry.register("D8210-D8220", minor_treatment_harmful_habits.activate_minor_treatment_harmful_habits, 
+                            "Minor Treatment to Control Harmful Habits (D8210-D8220)")
+        self.registry.register("D8660-D8999", other_orthodontic_services.activate_other_orthodontic_services, 
+                            "Other Orthodontic Services (D8660-D8999)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing orthodontic services."""
@@ -87,8 +102,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_orthodontic: {str(e)}")
             return ""
     
-    def activate_orthodontic(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_orthodontic(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             orthodontic_result = self.analyze_orthodontic(scenario)
@@ -98,53 +113,38 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Orthodontic Result in activate_orthodontic: {orthodontic_result}")
             
-            # Process specific orthodontic subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, orthodontic_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D8010-D8040", limited_orthodontic_treatment.activate_limited_orthodontic_treatment, "Limited Orthodontic Treatment (D8010-D8040)"),
-                ("D8070-D8090", comprehensive_orthodontic_treatment.activate_comprehensive_orthodontic_treatment, "Comprehensive Orthodontic Treatment (D8070-D8090)"),
-                ("D8210-D8220", minor_treatment_harmful_habits.activate_minor_treatment_harmful_habits, "Minor Treatment to Control Harmful Habits (D8210-D8220)"),
-                ("D8660-D8999", other_orthodontic_services.activate_other_orthodontic_services, "Other Orthodontic Services (D8660-D8999)")
-            ]
-            
-            for code_range, activate_func, subtopic_name in subtopic_map:
-                if code_range in orthodontic_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Comprehensive Orthodontic Treatment (D8070-D8090)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": orthodontic_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in orthodontic analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_orthodontic(scenario)
+        result = await self.activate_orthodontic(scenario)
         print(f"\n=== ORTHODONTIC ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
-
-orthodontic_service = OrthodonticServices()
 # Example usage
 if __name__ == "__main__":
-    scenario = input("Enter an orthodontic scenario: ")
-    orthodontic_service.run_analysis(scenario)
+    async def main():
+        orthodontic_service = OrthodonticServices()
+        scenario = input("Enter an orthodontic scenario: ")
+        await orthodontic_service.run_analysis(scenario)
+    
+    asyncio.run(main())

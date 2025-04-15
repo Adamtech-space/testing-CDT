@@ -1,9 +1,11 @@
 import os
 import sys
+import asyncio
 from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Load environment variables
 load_dotenv()
@@ -39,6 +41,41 @@ class OralMaxillofacialSurgeryServices:
         """Initialize with an optional LLMService instance."""
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D7111-D7140", activate_extractions, 
+                            "Extractions (D7111-D7140)")
+        self.registry.register("D7210-D7251", activate_extractions, 
+                            "Surgical Extractions (D7210-D7251)")
+        self.registry.register("D7260-D7297", activate_other_surgical_procedures, 
+                            "Other Surgical Procedures (D7260-D7297)")
+        self.registry.register("D7310-D7321", activate_alveoloplasty, 
+                            "Alveoloplasty (D7310-D7321)")
+        self.registry.register("D7340-D7350", activate_vestibuloplasty, 
+                            "Vestibuloplasty (D7340-D7350)")
+        self.registry.register("D7410-D7465", activate_excision_soft_tissue, 
+                            "Excision of Soft Tissue Lesions (D7410-D7465)")
+        self.registry.register("D7440-D7461", activate_excision_intra_osseous, 
+                            "Excision of Intra-Osseous Lesions (D7440-D7461)")
+        self.registry.register("D7471-D7490", activate_excision_bone_tissue, 
+                            "Excision of Bone Tissue (D7471-D7490)")
+        self.registry.register("D7510-D7560", activate_surgical_incision, 
+                            "Surgical Incision (D7510-D7560)")
+        self.registry.register("D7610-D7780", activate_closed_fractures, 
+                            "Treatment of Closed Fractures (D7610-D7780)")
+        self.registry.register("D7610-D7780", activate_open_fractures, 
+                            "Treatment of Open Fractures (D7610-D7780)")
+        self.registry.register("D7810-D7880", activate_tmj_dysfunctions, 
+                            "Reduction of Dislocation (D7810-D7880)")
+        self.registry.register("D7910-D7912", activate_traumatic_wounds, 
+                            "Repair of Traumatic Wounds (D7910-D7912)")
+        self.registry.register("D7911-D7912", activate_complicated_suturing, 
+                            "Complicated Suturing (D7911-D7912)")
+        self.registry.register("D7920-D7999", activate_other_repair_procedures, 
+                            "Other Repair Procedures (D7920-D7999)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing oral and maxillofacial surgery services."""
@@ -161,8 +198,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_oral_maxillofacial_surgery: {str(e)}")
             return ""
     
-    def activate_oral_maxillofacial_surgery(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_oral_maxillofacial_surgery(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             oral_surgery_result = self.analyze_oral_maxillofacial_surgery(scenario)
@@ -172,36 +209,12 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Oral & Maxillofacial Surgery Result in activate_oral_maxillofacial_surgery: {oral_surgery_result}")
             
-            # Process specific oral and maxillofacial surgery subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, oral_surgery_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D7111-D7140", activate_extractions, "Extractions (D7111-D7140)"),
-                ("D7210-D7251", activate_extractions, "Surgical Extractions (D7210-D7251)"),
-                ("D7260-D7297", activate_other_surgical_procedures, "Other Surgical Procedures (D7260-D7297)"),
-                ("D7310-D7321", activate_alveoloplasty, "Alveoloplasty (D7310-D7321)"),
-                ("D7340-D7350", activate_vestibuloplasty, "Vestibuloplasty (D7340-D7350)"),
-                ("D7410-D7465", activate_excision_soft_tissue, "Excision of Soft Tissue Lesions (D7410-D7465)"),
-                ("D7440-D7461", activate_excision_intra_osseous, "Excision of Intra-Osseous Lesions (D7440-D7461)"),
-                ("D7471-D7490", activate_excision_bone_tissue, "Excision of Bone Tissue (D7471-D7490)"),
-                ("D7510-D7560", activate_surgical_incision, "Surgical Incision (D7510-D7560)"),
-                ("D7610-D7780", activate_closed_fractures, "Treatment of Closed Fractures (D7610-D7780)"),
-                ("D7610-D7780", activate_open_fractures, "Treatment of Open Fractures (D7610-D7780)"),
-                ("D7810-D7880", activate_tmj_dysfunctions, "Reduction of Dislocation (D7810-D7880)"),
-                ("D7910-D7912", activate_traumatic_wounds, "Repair of Traumatic Wounds (D7910-D7912)"),
-                ("D7911-D7912", activate_complicated_suturing, "Complicated Suturing (D7911-D7912)"),
-                ("D7920-D7999", activate_other_repair_procedures, "Other Repair Procedures (D7920-D7999)")
-            ]
-            
-            for code_range, activate_func, subtopic_name in subtopic_map:
-                if code_range in oral_surgery_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_func(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
+            # Initialize lists from registry results
+            specific_codes = result["specific_codes"]
+            activated_subtopics = result["activated_subtopics"]
             
             # Special case for sialoliths
             if "sialolith" in scenario.lower() and "D7260-D7297" not in oral_surgery_result:
@@ -211,8 +224,8 @@ List them in order of relevance, with the most relevant first.
                     specific_codes.append(code)
                     activated_subtopics.append("Other Surgical Procedures (D7260-D7297) - Sialolithotomy")
             
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Extractions (D7111-D7140)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = activated_subtopics[0] if activated_subtopics else None
             
             # Return a dictionary with the required fields
             return {
@@ -225,10 +238,10 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in oral and maxillofacial surgery analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_oral_maxillofacial_surgery(scenario)
+        result = await self.activate_oral_maxillofacial_surgery(scenario)
         print(f"\n=== ORAL & MAXILLOFACIAL SURGERY ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
@@ -237,6 +250,9 @@ List them in order of relevance, with the most relevant first.
 
 # Example usage
 if __name__ == "__main__":
-    oral_surgery_service = OralMaxillofacialSurgeryServices()
-    scenario = input("Enter an oral and maxillofacial surgery scenario: ")
-    oral_surgery_service.run_analysis(scenario)
+    async def main():
+        oral_surgery_service = OralMaxillofacialSurgeryServices()
+        scenario = input("Enter an oral and maxillofacial surgery scenario: ")
+        await oral_surgery_service.run_analysis(scenario)
+    
+    asyncio.run(main())

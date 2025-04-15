@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -29,12 +31,30 @@ class RestorativeServices:
         self.prompt_template = self._create_prompt_template()
         
         # Initialize the subtopic service classes
-        self.amalgam_restorations = AmalgamRestorationsServices(llm_service)
-        self.resin_based_composite_restorations = ResinBasedCompositeRestorationsServices(llm_service)
-        self.gold_foil_restorations = GoldFoilRestorationsServices(llm_service)
-        self.inlays_and_onlays = InlaysAndOnlaysServices(llm_service)
-        self.crowns = CrownsServices(llm_service)
-        self.other_restorative_services = OtherRestorativeServices(llm_service)
+        self.amalgam_restorations = AmalgamRestorationsServices(self.llm_service)
+        self.resin_based_composite_restorations = ResinBasedCompositeRestorationsServices(self.llm_service)
+        self.gold_foil_restorations = GoldFoilRestorationsServices(self.llm_service)
+        self.inlays_and_onlays = InlaysAndOnlaysServices(self.llm_service)
+        self.crowns = CrownsServices(self.llm_service)
+        self.other_restorative_services = OtherRestorativeServices(self.llm_service)
+        
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D2140-D2161", self.amalgam_restorations.activate_amalgam_restorations, 
+                            "Amalgam Restorations (D2140-D2161)")
+        self.registry.register("D2330-D2394", self.resin_based_composite_restorations.activate_resin_based_composite_restorations, 
+                            "Resin-Based Composite Restorations (D2330-D2394)")
+        self.registry.register("D2410-D2430", self.gold_foil_restorations.activate_gold_foil_restorations, 
+                            "Gold Foil Restorations (D2410-D2430)")
+        self.registry.register("D2510-D2664", self.inlays_and_onlays.activate_inlays_and_onlays, 
+                            "Inlays and Onlays (D2510-D2664)")
+        self.registry.register("D2710-D2799", self.crowns.activate_crowns, 
+                            "Crowns (D2710-D2799)")
+        self.registry.register("D2910-D2999", self.other_restorative_services.activate_other_restorative_services, 
+                            "Other Restorative Services (D2910-D2999)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing restorative services."""
@@ -101,8 +121,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_restorative: {str(e)}")
             return ""
     
-    def activate_restorative(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_restorative(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             restorative_result = self.analyze_restorative(scenario)
@@ -112,46 +132,27 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Restorative Result in activate_restorative: {restorative_result}")
             
-            # Process specific restorative subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, restorative_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D2140-D2161", self.amalgam_restorations.activate_amalgam_restorations, "Amalgam Restorations (D2140-D2161)"),
-                ("D2330-D2394", self.resin_based_composite_restorations.activate_resin_based_composite_restorations, "Resin-Based Composite Restorations (D2330-D2394)"),
-                ("D2410-D2430", self.gold_foil_restorations.activate_gold_foil_restorations, "Gold Foil Restorations (D2410-D2430)"),
-                ("D2510-D2664", self.inlays_and_onlays.activate_inlays_and_onlays, "Inlays and Onlays (D2510-D2664)"),
-                ("D2710-D2799", self.crowns.activate_crowns, "Crowns (D2710-D2799)"),
-                ("D2910-D2999", self.other_restorative_services.activate_other_restorative_services, "Other Restorative Services (D2910-D2999)")
-            ]
-            
-            for code_range, activate_method, subtopic_name in subtopic_map:
-                if code_range in restorative_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_method(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Resin-Based Composite Restorations (D2330-D2394)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": restorative_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in restorative analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_restorative(scenario)
+        result = await self.activate_restorative(scenario)
         print(f"\n=== RESTORATIVE ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
@@ -160,6 +161,9 @@ List them in order of relevance, with the most relevant first.
 
 # Example usage
 if __name__ == "__main__":
-    restorative_service = RestorativeServices()
-    scenario = input("Enter a restorative dental scenario: ")
-    restorative_service.run_analysis(scenario)
+    async def main():
+        restorative_service = RestorativeServices()
+        scenario = input("Enter a restorative dental scenario: ")
+        await restorative_service.run_analysis(scenario)
+    
+    asyncio.run(main())

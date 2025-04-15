@@ -1,8 +1,10 @@
 import os
 import sys
+import asyncio
 from langchain.prompts import PromptTemplate
 from llm_services import LLMService, get_service, set_model, set_temperature
 from llm_services import DEFAULT_MODEL, DEFAULT_TEMP
+from subtopic_registry import SubtopicRegistry
 
 # Add the root directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +47,32 @@ class RemovableProsthodonticsServices:
         self.other_removable_prosthetic_services = OtherRemovableProstheticServices(self.llm_service)
         self.tissue_conditioning = TissueConditioningServices(self.llm_service)
         self.unspecified_removable_prosthodontic_procedure = UnspecifiedRemovableProsthodonticProcedureServices(self.llm_service)
+        
+        self.registry = SubtopicRegistry()
+        self._register_subtopics()
+    
+    def _register_subtopics(self):
+        """Register all subtopics for parallel activation."""
+        self.registry.register("D5110-D5140", self.complete_dentures.activate_complete_dentures, 
+                            "Complete Dentures (D5110-D5140)")
+        self.registry.register("D5211-D5286", self.partial_denture.activate_partial_denture, 
+                            "Partial Denture (D5211-D5286)")
+        self.registry.register("D5410-D5422", self.adjustments_to_dentures.activate_adjustments_to_dentures, 
+                            "Adjustments to Dentures (D5410-D5422)")
+        self.registry.register("D5511-D5520", self.repairs_to_complete_dentures.activate_repairs_to_complete_dentures, 
+                            "Repairs to Complete Dentures (D5511-D5520)")
+        self.registry.register("D5611-D5671", self.repairs_to_partial_dentures.activate_repairs_to_partial_dentures, 
+                            "Repairs to Partial Dentures (D5611-D5671)")
+        self.registry.register("D5710-D5725", self.denture_rebase_procedures.activate_denture_rebase_procedures, 
+                            "Denture Rebase Procedures (D5710-D5725)")
+        self.registry.register("D5730-D5761", self.denture_reline_procedures.activate_denture_reline_procedures, 
+                            "Denture Reline Procedures (D5730-D5761)")
+        self.registry.register("D5810-D5821", self.interim_prosthesis.activate_interim_prosthesis, 
+                            "Interim Prosthesis (D5810-D5821)")
+        self.registry.register("D5765-D5899", self.other_removable_prosthetic_services.activate_other_removable_prosthetic_services, 
+                            "Other Removable Prosthetic Services (D5765-D5899)")
+        self.registry.register("D5765-D5899", self.tissue_conditioning.activate_tissue_conditioning, 
+                            "Tissue Conditioning (D5765-D5899)")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing removable prosthodontics services."""
@@ -137,8 +165,8 @@ List them in order of relevance, with the most relevant first.
             print(f"Error in analyze_prosthodontics_removable: {str(e)}")
             return ""
     
-    def activate_prosthodontics_removable(self, scenario: str) -> dict:
-        """Activate relevant subtopics and return detailed results."""
+    async def activate_prosthodontics_removable(self, scenario: str) -> dict:
+        """Activate relevant subtopics in parallel and return detailed results."""
         try:
             # Get the code range from the analysis
             prosthodontics_result = self.analyze_prosthodontics_removable(scenario)
@@ -148,49 +176,27 @@ List them in order of relevance, with the most relevant first.
             
             print(f"Prosthodontics Removable Result in activate_prosthodontics_removable: {prosthodontics_result}")
             
-            # Process specific prosthodontics subtopics based on the result
-            specific_codes = []
-            activated_subtopics = []
+            # Activate subtopics in parallel using the registry
+            result = await self.registry.activate_all(scenario, prosthodontics_result)
             
-            # Check for each subtopic and activate if applicable
-            subtopic_map = [
-                ("D5110-D5140", self.complete_dentures.activate_complete_dentures, "Complete Dentures (D5110-D5140)"),
-                ("D5211-D5286", self.partial_denture.activate_partial_denture, "Partial Denture (D5211-D5286)"),
-                ("D5410-D5422", self.adjustments_to_dentures.activate_adjustments_to_dentures, "Adjustments to Dentures (D5410-D5422)"),
-                ("D5511-D5520", self.repairs_to_complete_dentures.activate_repairs_to_complete_dentures, "Repairs to Complete Dentures (D5511-D5520)"),
-                ("D5611-D5671", self.repairs_to_partial_dentures.activate_repairs_to_partial_dentures, "Repairs to Partial Dentures (D5611-D5671)"),
-                ("D5710-D5725", self.denture_rebase_procedures.activate_denture_rebase_procedures, "Denture Rebase Procedures (D5710-D5725)"),
-                ("D5730-D5761", self.denture_reline_procedures.activate_denture_reline_procedures, "Denture Reline Procedures (D5730-D5761)"),
-                ("D5810-D5821", self.interim_prosthesis.activate_interim_prosthesis, "Interim Prosthesis (D5810-D5821)"),
-                ("D5765-D5899", self.other_removable_prosthetic_services.activate_other_removable_prosthetic_services, "Other Removable Prosthetic Services (D5765-D5899)")
-            ]
-            
-            for code_range, activate_method, subtopic_name in subtopic_map:
-                if code_range in prosthodontics_result:
-                    print(f"Activating subtopic: {subtopic_name}")
-                    code = activate_method(scenario)
-                    if code:
-                        specific_codes.append(code)
-                        activated_subtopics.append(subtopic_name)
-            
-            # Choose the primary subtopic (either the first activated or a default)
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else "Complete Dentures (D5110-D5140)"
+            # Choose the primary subtopic only if there are activated subtopics
+            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": prosthodontics_result,
                 "subtopic": primary_subtopic,
-                "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "activated_subtopics": result["activated_subtopics"],
+                "codes": result["specific_codes"]
             }
         except Exception as e:
             print(f"Error in removable prosthodontics analysis: {str(e)}")
             return {}
     
-    def run_analysis(self, scenario: str) -> None:
+    async def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""
         print(f"Using model: {self.llm_service.model} with temperature: {self.llm_service.temperature}")
-        result = self.activate_prosthodontics_removable(scenario)
+        result = await self.activate_prosthodontics_removable(scenario)
         print(f"\n=== REMOVABLE PROSTHODONTICS ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
         print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
@@ -199,6 +205,9 @@ List them in order of relevance, with the most relevant first.
 
 # Example usage
 if __name__ == "__main__":
-    prosthodontics_service = RemovableProsthodonticsServices()
-    scenario = input("Enter a removable prosthodontics dental scenario: ")
-    prosthodontics_service.run_analysis(scenario)
+    async def main():
+        prosthodontics_service = RemovableProsthodonticsServices()
+        scenario = input("Enter a removable prosthodontics dental scenario: ")
+        await prosthodontics_service.run_analysis(scenario)
+    
+    asyncio.run(main())
