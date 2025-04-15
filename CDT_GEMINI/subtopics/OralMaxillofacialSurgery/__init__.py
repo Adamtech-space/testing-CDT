@@ -3,7 +3,7 @@ Module for handling dental oral and maxillofacial surgery code extraction.
 """
 
 from .extractions import ExtractionsServices
-from .other_surgical_procedures import activate_other_surgical_procedures
+from .other_surgical_procedures import other_surgical_procedures_service
 from .alveoloplasty import alveoloplasty_service
 from .vestibuloplasty import vestibuloplasty_service
 from .excision_soft_tissue import excision_soft_tissue_service
@@ -24,6 +24,10 @@ extractions_service = ExtractionsServices()
 def activate_extractions(scenario):
     """Delegate to the extractions service instance."""
     return extractions_service.activate_extractions(scenario)
+
+def activate_other_surgical_procedures(scenario):
+    """Delegate to the other surgical procedures service instance."""
+    return other_surgical_procedures_service.activate_other_surgical_procedures(scenario)
 
 def activate_alveoloplasty(scenario):
     """Delegate to the alveoloplasty service instance."""
