@@ -3,26 +3,40 @@ Module for extracting space maintenance codes.
 """
 
 import os
+import sys
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from subtopics.prompt.prompt import PROMPT
-from llm_services import create_chain, invoke_chain, get_llm_service, set_model_for_file
+from llm_services import get_llm_service
 
 # Load environment variables
 load_dotenv()
 
-# Get model name from environment variable, default to gpt-4o if not set
- 
-def create_space_maintenance_extractor(temperature=0.0):
+class SpaceMaintenanceServices:
     """
-    Create a LangChain-based space maintenance code extractor.
+    Class for extracting space maintenance codes.
     """
-    llm = ChatGoogleGenerativeAI(model="models/gemini-2.5-pro-exp-03-25", temperature=temperature)
     
-    prompt_template = PromptTemplate(
-        template=f"""
+    def __init__(self, temperature=0.0):
+        """
+        Initialize the SpaceMaintenanceServices class.
+        
+        Args:
+            temperature (float, optional): Temperature setting for the LLM. Defaults to 0.0.
+        """
+        self.temperature = temperature
+        self.llm_service = get_llm_service(temperature=temperature)
+        self.prompt_template = self._create_prompt_template()
+        
+    def _create_prompt_template(self):
+        """
+        Create a LangChain-based prompt template for space maintenance code extraction.
+        
+        Returns:
+            PromptTemplate: A configured prompt template for space maintenance code extraction.
+        """
+        return PromptTemplate(
+            template=f"""
 You are a highly experienced dental coding expert
 
 ### Before picking a code, ask:
@@ -212,51 +226,79 @@ You are a highly experienced dental coding expert
 ---
 
 ### Key Takeaways:
-- *Fixed vs. Removable:* Codes distinguish between fixed (D1510, D1516, D1517) and removable (D1520, D1526, D1527) appliances—choose based on design and patient needs.
-- *Unilateral vs. Bilateral:* Identify if the appliance affects one quadrant (D1510, D1520) or both sides (D1516, D1517, D1526, D1527) of an arch.
-- *Arch Specificity:* Maxillary (D1516, D1526) and mandibular (D1517, D1527) codes are distinct—verify the correct jaw.
-- *Maintenance Matters:* Re-cement/re-bond (D1551-D1553) and removal (D1556-D1558) codes apply only to prior placements—link to original code.
-- *Documentation Precision:* Specify quadrant, arch, appliance type, and clinical justification for accurate billing and audits.
-
+- *Fixed vs. Removable:* Match the appliance design to the code—fixed codes (D1510-D1517) vs. removable codes (D1520-D1527).
+- *Unilateral vs. Bilateral:* Carefully distinguish between single-quadrant devices (D1510/D1520) and those spanning both sides of an arch (D1516-D1517/D1526-D1527).
+- *Arch Specificity:* For bilateral appliances, always specify maxillary (D1516/D1526) or mandibular (D1517/D1527).
+- *Service Type:* Initial placement is distinct from repair (D1551-D1553) or removal (D1556-D1558)—don't bundle with placement codes.
+- *Documentation Precision:* Note quadrant, appliance design, and purpose (e.g., tooth loss prevention vs. distal guidance for D1575).
 
 Scenario:
 "{{question}}"
 
 {PROMPT}
 """,
-        input_variables=["question"]
-    )
-    
-    return LLMChain(llm=llm, prompt=prompt_template)
+            input_variables=["question"]
+        )
+        
+    def extract_space_maintenance_code(self, scenario):
+        """
+        Extract space maintenance code(s) for a given scenario.
+        
+        Args:
+            scenario (str): The dental scenario to analyze.
+            
+        Returns:
+            str: The extracted space maintenance code(s).
+        """
+        try:
+            result = self.llm_service.invoke(
+                self.prompt_template.format(question=scenario)
+            )
+            print(f"Space maintenance code result: {result}")
+            return result.strip()
+        except Exception as e:
+            print(f"Error in extract_space_maintenance_code: {str(e)}")
+            return ""
+            
+    def activate_space_maintenance(self, scenario):
+        """
+        Activate space maintenance analysis and return results.
+        
+        Args:
+            scenario (str): The dental scenario to analyze.
+            
+        Returns:
+            str: The extracted space maintenance code(s).
+        """
+        try:
+            return self.extract_space_maintenance_code(scenario)
+        except Exception as e:
+            print(f"Error in activate_space_maintenance: {str(e)}")
+            return ""
+            
+    def run_analysis(self, scenario):
+        """
+        Run the space maintenance analysis for a given scenario.
+        
+        Args:
+            scenario (str): The dental scenario to analyze.
+            
+        Returns:
+            str: The extracted space maintenance code(s).
+        """
+        return self.activate_space_maintenance(scenario)
 
+# For backwards compatibility
 def extract_space_maintenance_code(scenario, temperature=0.0):
     """
     Extract space maintenance code(s) for a given scenario.
     """
-    try:
-        # Check if the scenario specifically mentions bilateral maxillary removal
-        scenario_lower = scenario.lower()
-        if ("maxillary" in scenario_lower or "upper" in scenario_lower) and \
-           ("bilateral" in scenario_lower or "both sides" in scenario_lower) and \
-           ("remov" in scenario_lower or "take off" in scenario_lower or "take out" in scenario_lower):
-            print("Detected maxillary bilateral space maintainer removal scenario - selecting D1557")
-            return "D1557"
-        
-        # If not specifically about maxillary bilateral removal, use the general extractor
-        chain = create_space_maintenance_extractor(temperature)
-        result = invoke_chain(chain, {"question": scenario})
-        print(f"Space maintenance code result: {result}")
-        return result.strip()
-    except Exception as e:
-        print(f"Error in extract_space_maintenance_code: {str(e)}")
-        return ""
+    service = SpaceMaintenanceServices(temperature=temperature)
+    return service.extract_space_maintenance_code(scenario)
 
 def activate_space_maintenance(scenario):
     """
     Activate space maintenance analysis and return results.
     """
-    try:
-        return extract_space_maintenance_code(scenario)
-    except Exception as e:
-        print(f"Error in activate_space_maintenance: {str(e)}")
-        return "" 
+    service = SpaceMaintenanceServices()
+    return service.activate_space_maintenance(scenario) 

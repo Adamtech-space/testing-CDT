@@ -3,26 +3,40 @@ Module for extracting space maintainers codes.
 """
 
 import os
+import sys
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from subtopics.prompt.prompt import PROMPT
-from llm_services import create_chain, invoke_chain, get_llm_service, set_model_for_file
+from llm_services import get_llm_service
 
 # Load environment variables
 load_dotenv()
 
-# Get model name from environment variable, default to gpt-4o if not set
- 
-def create_space_maintainers_extractor(temperature=0.0):
+class SpaceMaintainersServices:
     """
-    Create a LangChain-based space maintainers code extractor.
+    Class for extracting space maintainers codes.
     """
-    llm = ChatGoogleGenerativeAI(model="models/gemini-2.5-pro-exp-03-25", temperature=temperature)
     
-    prompt_template = PromptTemplate(
-        template=f"""
+    def __init__(self, temperature=0.0):
+        """
+        Initialize the SpaceMaintainersServices class.
+        
+        Args:
+            temperature (float, optional): Temperature setting for the LLM. Defaults to 0.0.
+        """
+        self.temperature = temperature
+        self.llm_service = get_llm_service(temperature=temperature)
+        self.prompt_template = self._create_prompt_template()
+        
+    def _create_prompt_template(self):
+        """
+        Create a LangChain-based prompt template for space maintainers code extraction.
+        
+        Returns:
+            PromptTemplate: A configured prompt template for space maintainers code extraction.
+        """
+        return PromptTemplate(
+            template=f"""
 You are a highly experienced dental coding expert
 
  Before picking a code, ask:
@@ -67,39 +81,77 @@ Scenario:
 
 {PROMPT}
 """,
-        input_variables=["question"]
-    )
-    
-    return LLMChain(llm=llm, prompt=prompt_template)
+            input_variables=["question"]
+        )
+        
+    def extract_space_maintainers_code(self, scenario):
+        """
+        Extract space maintainers code(s) for a given scenario.
+        
+        Args:
+            scenario (str): The dental scenario to analyze.
+            
+        Returns:
+            str: The extracted space maintainers code(s).
+        """
+        try:
+            # First check if this is about bilateral maxillary space maintainer removal
+            scenario_lower = scenario.lower()
+            if ("maxillary" in scenario_lower or "upper" in scenario_lower) and \
+               ("bilateral" in scenario_lower or "both sides" in scenario_lower) and \
+               ("remov" in scenario_lower or "take off" in scenario_lower or "take out" in scenario_lower):
+                print("Space maintainers module: This is a maxillary bilateral removal scenario - deferring to space_maintenance.py")
+                return ""  # Return empty so that the space_maintenance module's D1557 is used
 
+            # Only proceed with chain if not a maxillary bilateral removal scenario
+            result = self.llm_service.invoke(
+                self.prompt_template.format(question=scenario)
+            )
+            print(f"Space maintainers code result: {result}")
+            return result.strip()
+        except Exception as e:
+            print(f"Error in extract_space_maintainers_code: {str(e)}")
+            return ""
+            
+    def activate_space_maintainers(self, scenario):
+        """
+        Activate space maintainers analysis and return results.
+        
+        Args:
+            scenario (str): The dental scenario to analyze.
+            
+        Returns:
+            str: The extracted space maintainers code(s).
+        """
+        try:
+            return self.extract_space_maintainers_code(scenario)
+        except Exception as e:
+            print(f"Error in activate_space_maintainers: {str(e)}")
+            return ""
+            
+    def run_analysis(self, scenario):
+        """
+        Run the space maintainers analysis for a given scenario.
+        
+        Args:
+            scenario (str): The dental scenario to analyze.
+            
+        Returns:
+            str: The extracted space maintainers code(s).
+        """
+        return self.activate_space_maintainers(scenario)
+
+# For backwards compatibility
 def extract_space_maintainers_code(scenario, temperature=0.0):
     """
     Extract space maintainers code(s) for a given scenario.
     """
-    try:
-        # First check if this is about bilateral maxillary space maintainer removal
-        scenario_lower = scenario.lower()
-        if ("maxillary" in scenario_lower or "upper" in scenario_lower) and \
-           ("bilateral" in scenario_lower or "both sides" in scenario_lower) and \
-           ("remov" in scenario_lower or "take off" in scenario_lower or "take out" in scenario_lower):
-            print("Space maintainers module: This is a maxillary bilateral removal scenario - deferring to space_maintenance.py")
-            return ""  # Return empty so that the space_maintenance module's D1557 is used
-
-        # Only proceed with chain if not a maxillary bilateral removal scenario
-        chain = create_space_maintainers_extractor(temperature)
-        result = invoke_chain(chain, {"question": scenario})
-        print(f"Space maintainers code result: {result}")
-        return result.strip()
-    except Exception as e:
-        print(f"Error in extract_space_maintainers_code: {str(e)}")
-        return ""
+    service = SpaceMaintainersServices(temperature=temperature)
+    return service.extract_space_maintainers_code(scenario)
 
 def activate_space_maintainers(scenario):
     """
     Activate space maintainers analysis and return results.
     """
-    try:
-        return extract_space_maintainers_code(scenario)
-    except Exception as e:
-        print(f"Error in activate_space_maintainers: {str(e)}")
-        return "" 
+    service = SpaceMaintainersServices()
+    return service.activate_space_maintainers(scenario) 
