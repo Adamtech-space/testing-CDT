@@ -35,7 +35,6 @@ try:
     from subtopics.OralMaxillofacialSurgery.other_repair_procedures import other_repair_procedures_service
     from subtopics.OralMaxillofacialSurgery.vestibuloplasty import vestibuloplasty_service
     
-    print("Successfully imported all Oral and Maxillofacial Surgery service modules")
 except ImportError as e:
     print(f"Warning: Could not import subtopics for OralMaxillofacialSurgery: {str(e)}")
     print(f"Current sys.path: {sys.path}")
@@ -237,7 +236,7 @@ List them in order of relevance, with the most relevant first.
             result = await self.registry.activate_all(scenario, oral_surgery_result)
             
             # Initialize lists from registry results
-            specific_codes = result["specific_codes"]
+            topic_result = result["topic_result"]
             activated_subtopics = result["activated_subtopics"]
             
             # Special case for sialoliths
@@ -245,18 +244,14 @@ List them in order of relevance, with the most relevant first.
                 print("Activating subtopic: Other Surgical Procedures (D7260-D7297) - Sialolithotomy")
                 code = other_surgical_procedures_service.activate_other_surgical_procedures(scenario)
                 if code:
-                    specific_codes.append(code)
+                    topic_result.append(code)
                     activated_subtopics.append("Other Surgical Procedures (D7260-D7297) - Sialolithotomy")
-            
-            # Choose the primary subtopic only if there are activated subtopics
-            primary_subtopic = activated_subtopics[0] if activated_subtopics else None
             
             # Return a dictionary with the required fields
             return {
                 "code_range": oral_surgery_result,
-                "subtopic": primary_subtopic,
                 "activated_subtopics": activated_subtopics,
-                "codes": specific_codes
+                "codes": topic_result
             }
         except Exception as e:
             print(f"Error in oral and maxillofacial surgery analysis: {str(e)}")
@@ -268,7 +263,6 @@ List them in order of relevance, with the most relevant first.
         result = await self.activate_oral_maxillofacial_surgery(scenario)
         print(f"\n=== ORAL & MAXILLOFACIAL SURGERY ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
-        print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 

@@ -146,15 +146,11 @@ Example: "D9210-D9248, D9110-D9130, D9610-D9630"
             # Activate subtopics in parallel using the registry
             result = await self.registry.activate_all(scenario, adjunctive_result)
             
-            # Choose the primary subtopic only if there are activated subtopics
-            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
-            
             # Return a dictionary with the required fields
             return {
                 "code_range": adjunctive_result,
-                "subtopic": primary_subtopic,
                 "activated_subtopics": result["activated_subtopics"],
-                "codes": result["specific_codes"]
+                "codes": result["topic_result"]
             }
         except Exception as e:
             print(f"Error in adjunctive general services analysis: {str(e)}")
@@ -166,7 +162,6 @@ Example: "D9210-D9248, D9110-D9130, D9610-D9630"
         result = await self.activate_adjunctive_general_services(scenario)
         print(f"\n=== ADJUNCTIVE GENERAL SERVICES ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
-        print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 
@@ -174,8 +169,7 @@ adjunctive_general_services_service = AdjunctiveGeneralServices()
 # Example usage
 if __name__ == "__main__":
     async def main():
-        adj_service = AdjunctiveGeneralServices()
         scenario = input("Enter an adjunctive general services dental scenario: ")
-        await adj_service.run_analysis(scenario)
+        await adjunctive_general_services_service.run_analysis(scenario)
     
     asyncio.run(main())

@@ -2,6 +2,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from llm_services import generate_response, get_service, set_model, set_temperature
+from llm_services import OPENROUTER_MODEL, DEFAULT_TEMP
 from typing import Dict, Any, Optional
 
 
@@ -45,7 +46,7 @@ ICD_QUESTIONS: [List only the most critical ICD-specific questions that would im
 ICD_EXPLANATION: [Briefly explain why these specific ICD questions are necessary for code selection]
 """
 
-    def __init__(self, model: str = DEFAULT_MODEL, temperature: float = DEFAULT_TEMP):
+    def __init__(self, model: str = OPENROUTER_MODEL, temperature: float = DEFAULT_TEMP):
         """Initialize the questioner with model and temperature settings"""
         self.service = get_service()
         self.configure(model, temperature)

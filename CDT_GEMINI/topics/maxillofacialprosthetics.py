@@ -88,15 +88,11 @@ List them in order of relevance, with the most relevant first.
             # Activate subtopics in parallel using the registry
             result = await self.registry.activate_all(scenario, maxillofacial_result)
             
-            # Choose the primary subtopic only if there are activated subtopics
-            primary_subtopic = result["activated_subtopics"][0] if result["activated_subtopics"] else None
-            
             # Return a dictionary with the required fields
             return {
                 "code_range": maxillofacial_result,
-                "subtopic": primary_subtopic,
                 "activated_subtopics": result["activated_subtopics"],
-                "codes": result["specific_codes"]
+                "codes": result["topic_result"]
             }
         except Exception as e:
             print(f"Error in maxillofacial prosthetics analysis: {str(e)}")
@@ -108,7 +104,6 @@ List them in order of relevance, with the most relevant first.
         result = await self.activate_maxillofacial_prosthetics(scenario)
         print(f"\n=== MAXILLOFACIAL PROSTHETICS ANALYSIS RESULT ===")
         print(f"CODE RANGE: {result.get('code_range', 'None')}")
-        print(f"PRIMARY SUBTOPIC: {result.get('subtopic', 'None')}")
         print(f"ACTIVATED SUBTOPICS: {', '.join(result.get('activated_subtopics', []))}")
         print(f"SPECIFIC CODES: {', '.join(result.get('codes', []))}")
 

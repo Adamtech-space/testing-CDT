@@ -31,7 +31,8 @@ class MedicalCodingDB:
                 "processed_clean_data": data.get("processed_clean_data", ""),
                 "cdt_result": data.get("cdt_result", "{}"),
                 "icd_result": data.get("icd_result", "{}"),
-                "questioner_data": data.get("questioner_data", "{}")
+                "questioner_data": data.get("questioner_data", "{}"),
+                "inspector_results": data.get("inspector_results", "{}")        
             }
             
             result = self.supabase.table("dental_report").insert(record_data).execute()
@@ -95,6 +96,33 @@ class MedicalCodingDB:
             print(f"❌ Error retrieving analysis by ID: {str(e)}")
             return None
 
+    def get_complete_analysis(self, record_id):
+        """Retrieve a complete analysis record by its ID."""
+        self.ensure_connection()
+        try:
+            result = self.supabase.table("dental_report").select(
+                "processed_clean_data, cdt_result, icd_result, questioner_data, user_question, inspector_results"
+            ).eq("id", record_id).execute()
+            
+            if result.data:
+                record = result.data[0]
+                cdt_size = len(record['cdt_result']) if record['cdt_result'] else 0
+                icd_size = len(record['icd_result']) if record['icd_result'] else 0
+                questioner_size = len(record['questioner_data']) if record['questioner_data'] else 0
+                inspector_size = len(record['inspector_results']) if 'inspector_results' in record and record['inspector_results'] else 0
+                print(f"Retrieved complete record ID: {record_id}")
+                print(f"- CDT data size: {cdt_size} bytes")
+                print(f"- ICD data size: {icd_size} bytes")
+                print(f"- Questioner data size: {questioner_size} bytes")
+                print(f"- Inspector data size: {inspector_size} bytes")
+                return record
+            else:
+                print(f"No record found with ID: {record_id}")
+                return None
+        except Exception as e:
+            print(f"❌ Error retrieving complete analysis by ID: {str(e)}")
+            return None
+
     def get_latest_processed_scenario(self):
         """Retrieve the latest processed scenario."""
         self.ensure_connection()
@@ -132,6 +160,20 @@ class MedicalCodingDB:
             return True
         except Exception as e:
             print(f"❌ Error updating questioner data: {str(e)}")
+            return False
+
+    def update_inspector_results(self, record_id, inspector_results):
+        """Update the inspector results for a given record."""
+        self.ensure_connection()
+        try:
+            result = self.supabase.table("dental_report").update({
+                "inspector_results": inspector_results
+            }).eq("id", record_id).execute()
+            
+            print(f"✅ Inspector results updated successfully for ID: {record_id}")
+            return True
+        except Exception as e:
+            print(f"❌ Error updating inspector results: {str(e)}")
             return False
 
     def export_analysis_results(self, record_id, export_dir=None):

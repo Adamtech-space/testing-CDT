@@ -255,8 +255,8 @@ Repeat this exact format for each relevant code range. Do not add additional tex
             for code, expl, doubt in zip(range_codes, explanations, doubts)
         ]
         
-        # Check for missing important code ranges based on scenario keywords
-        self._ensure_all_code_ranges(formatted_results, scenario)
+        # At this point, we're not using the scenario parameter
+        # This is causing an error when _ensure_all_code_ranges tries to use it
         
         self.logger.info(f"Parsed {len(formatted_results)} code ranges")
         return {
@@ -321,6 +321,13 @@ Repeat this exact format for each relevant code range. Do not add additional tex
             formatted_prompt = self.format_prompt(scenario)
             response = generate_response(formatted_prompt)
             result = self.parse_response(response)
+            
+            # Check for missing important code ranges based on scenario keywords
+            self._ensure_all_code_ranges(result["formatted_results"], scenario)
+            
+            # Update the range_codes_string after potentially adding new codes
+            result["range_codes_string"] = ",".join([item["code_range"] for item in result["formatted_results"]])
+            
             self.logger.info("Successfully processed dental scenario")
             return result
         except Exception as e:
