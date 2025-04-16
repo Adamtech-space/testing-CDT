@@ -108,6 +108,5 @@ SCENARIO: {{scenario}}
 drugs_service = DrugsServices()
 # Example usage
 if __name__ == "__main__":
-    drugs_service = DrugsServices()
     scenario = input("Enter a drugs dental scenario: ")
     drugs_service.run_analysis(scenario)

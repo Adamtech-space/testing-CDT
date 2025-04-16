@@ -237,6 +237,5 @@ SCENARIO: {{scenario}}
 non_clinical_service = NonClinicalProceduresServices()
 # Example usage
 if __name__ == "__main__":
-    non_clinical_service = NonClinicalProceduresServices()
     scenario = input("Enter a non-clinical procedures dental scenario: ")
     non_clinical_service.run_analysis(scenario)

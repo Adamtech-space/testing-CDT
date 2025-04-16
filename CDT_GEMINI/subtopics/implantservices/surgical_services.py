@@ -302,6 +302,5 @@ Scenario: {{scenario}}
 surgical_service = SurgicalImplantServices()
 # Example usage
 if __name__ == "__main__":
-    surgical_service = SurgicalImplantServices()
     scenario = input("Enter a surgical implant services dental scenario: ")
     surgical_service.run_analysis(scenario)

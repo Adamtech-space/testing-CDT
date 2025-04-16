@@ -125,8 +125,10 @@ Scenario: {{scenario}}
         print(f"\n=== OTHER FIXED PARTIAL DENTURE SERVICES ANALYSIS RESULT ===")
         print(f"OTHER FIXED PARTIAL DENTURE SERVICES CODE: {result if result else 'None'}")
 
+# Create and export service instance
+other_fixed_partial_denture_services_service = OtherFixedPartialDentureServicesServices()
+
 # Example usage
 if __name__ == "__main__":
-    other_fixed_partial_denture_services_service = OtherFixedPartialDentureServicesServices()
     scenario = input("Enter an other fixed partial denture services dental scenario: ")
     other_fixed_partial_denture_services_service.run_analysis(scenario) 

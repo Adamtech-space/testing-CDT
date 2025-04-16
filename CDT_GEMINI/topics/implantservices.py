@@ -7,26 +7,27 @@ from llm_services import LLMService, get_service, set_model, set_temperature
 from sub_topic_registry import SubtopicRegistry
 
 # Add the project root to the path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(project_root)
 
 # Import modules
 from topics.prompt import PROMPT
 
-# Import subtopics with fallback mechanism
+# Import subtopics - Use absolute imports
 try:
-    from subtopics.implantservices.abutment_crowns import abutment_crowns_service
-    from subtopics.implantservices.fixed_dentures import fixed_dentures_service
-    from subtopics.implantservices.fpd_implant import fpd_implant_service
-    from subtopics.implantservices.fpd_abutment import fpd_abutment_service
-    from subtopics.implantservices.implant_crowns import implant_crowns_service
-    from subtopics.implantservices.implant_supported_prosthetics import implant_supported_prosthetics_service
-    from subtopics.implantservices.other_services import other_implant_services_service
-    from subtopics.implantservices.pre_surgical import PreSurgicalImplantServices
-    from subtopics.implantservices.removable_dentures import removable_dentures_service
+    from subtopics.implantservices.pre_surgical import pre_surgical_service
     from subtopics.implantservices.surgical_services import surgical_service
-    
-except ImportError:
-    print("Warning: Could not import subtopics for implantservices. Using fallback functions.")
+    from subtopics.implantservices.implant_supported_prosthetics import implant_supported_prosthetics_service
+    from subtopics.implantservices.removable_dentures import removable_dentures_service
+    from subtopics.implantservices.fixed_dentures import fixed_dentures_service
+    from subtopics.implantservices.abutment_crowns import abutment_crowns_service
+    from subtopics.implantservices.implant_crowns import implant_crowns_service
+    from subtopics.implantservices.fpd_abutment import fpd_abutment_service
+    from subtopics.implantservices.fpd_implant import fpd_implant_service
+    from subtopics.implantservices.other_services import other_implant_services_service
+except ImportError as e:
+    print(f"Warning: Could not import subtopics for implantservices: {str(e)}")
+    print(f"Current sys.path: {sys.path}")
     # Define fallback functions
     def activate_pre_surgical(scenario): return None
     def activate_surgical_services(scenario): return None
@@ -51,26 +52,29 @@ class ImplantServices:
     
     def _register_subtopics(self):
         """Register all subtopics for parallel activation."""
-        self.registry.register("D6190", PreSurgicalImplantServices.activate_pre_surgical, 
-                            "Pre-Surgical Services (D6190)")
-        self.registry.register("D6010-D6199", surgical_service.activate_surgical_services, 
-                            "Surgical Services (D6010-D6199)")
-        self.registry.register("D6051-D6078", implant_supported_prosthetics_service.activate_implant_supported_prosthetics, 
-                            "Implant Supported Prosthetics (D6051-D6078)")
-        self.registry.register("D6110-D6119", removable_dentures_service.activate_removable_dentures, 
-                            "Implant Supported Removable Dentures (D6110-D6119)")
-        self.registry.register("D6090-D6095", fixed_dentures_service.activate_implant_supported_fixed_dentures, 
-                            "Implant Supported Fixed Dentures (D6090-D6095)")
-        self.registry.register("D6058-D6077", abutment_crowns_service.activate_single_crowns_abutment, 
-                            "Single Crowns, Abutment Supported (D6058-D6077)")
-        self.registry.register("D6065-D6067", implant_crowns_service.activate_single_crowns_implant, 
-                            "Single Crowns, Implant Supported (D6065-D6067)")
-        self.registry.register("D6071-D6074", fpd_abutment_service.activate_fpd_abutment, 
-                            "Fixed Partial Denture, Abutment Supported (D6071-D6074)")
-        self.registry.register("D6075", fpd_implant_service.activate_fpd_implant, 
-                            "Fixed Partial Denture, Implant Supported (D6075)")
-        self.registry.register("D6080-D6199", other_implant_services_service.activate_other_implant_services, 
-                            "Other Implant Services (D6080-D6199)")
+        try:
+            self.registry.register("D6190-D6190)", pre_surgical_service.activate_pre_surgical, 
+                                "Pre-Surgical Services (D6190-D6190)")
+            self.registry.register("D6010-D6199", surgical_service.activate_surgical_services, 
+                                "Surgical Services (D6010-D6199)")
+            self.registry.register("D6051-D6078", implant_supported_prosthetics_service.activate_implant_supported_prosthetics, 
+                                "Implant Supported Prosthetics (D6051-D6078)")
+            self.registry.register("D6110-D6119", removable_dentures_service.activate_removable_dentures, 
+                                "Implant Supported Removable Dentures (D6110-D6119)")
+            self.registry.register("D6090-D6095", fixed_dentures_service.activate_implant_supported_fixed_dentures, 
+                                "Implant Supported Fixed Dentures (D6090-D6095)")
+            self.registry.register("D6058-D6077", abutment_crowns_service.activate_single_crowns_abutment, 
+                                "Single Crowns, Abutment Supported (D6058-D6077)")
+            self.registry.register("D6065-D6067", implant_crowns_service.activate_single_crowns_implant, 
+                                "Single Crowns, Implant Supported (D6065-D6067)")
+            self.registry.register("D6071-D6074", fpd_abutment_service.activate_fpd_abutment, 
+                                "Fixed Partial Denture, Abutment Supported (D6071-D6074)")
+            self.registry.register("D6075", fpd_implant_service.activate_fpd_implant, 
+                                "Fixed Partial Denture, Implant Supported (D6075)")
+            self.registry.register("D6080-D6199", other_implant_services_service.activate_other_implant_services, 
+                                "Other Implant Services (D6080-D6199)")
+        except Exception as e:
+            print(f"Error registering subtopics: {str(e)}")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing implant services."""
@@ -79,7 +83,7 @@ class ImplantServices:
 You are a highly experienced dental coding expert with over 15 years of expertise in ADA dental codes. 
 Your task is to analyze the given scenario and determine the most applicable implant services code range(s) based on the following classifications:
 
-## **Pre-Surgical Services (D6190)**
+## **Pre-Surgical Services (D6190-D6190)**
 **Use when:** Performing radiographic/surgical implant index prior to surgery.
 **Check:** Documentation specifies the use of radiographic or surgical guides for implant planning.
 **Note:** This code is for the planning phase, not the actual implant placement.

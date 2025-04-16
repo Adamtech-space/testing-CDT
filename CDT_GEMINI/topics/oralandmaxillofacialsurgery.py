@@ -17,11 +17,43 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.OralMaxillofacialSurgery.alveoloplasty import alveoloplasty_service
-from subtopics.OralMaxillofacialSurgery.excision import excision_service
-from subtopics.OralMaxillofacialSurgery.extractions import extractions_service
-from subtopics.OralMaxillofacialSurgery.fractures import fractures_service
-from subtopics.OralMaxillofacialSurgery.other_surgical_procedures import other_surgical_procedures_service
+
+# Import service objects from subtopics with fallback mechanism
+try:
+    from subtopics.OralMaxillofacialSurgery.alveoloplasty import alveoloplasty_service
+    from subtopics.OralMaxillofacialSurgery.excision_soft_tissue import excision_soft_tissue_service
+    from subtopics.OralMaxillofacialSurgery.excision_intra_osseous import excision_intra_osseous_service
+    from subtopics.OralMaxillofacialSurgery.excision_bone_tissue import excision_bone_tissue_service
+    from subtopics.OralMaxillofacialSurgery.extractions import extractions_service
+    from subtopics.OralMaxillofacialSurgery.closed_fractures import closed_fractures_service
+    from subtopics.OralMaxillofacialSurgery.open_fractures import open_fractures_service
+    from subtopics.OralMaxillofacialSurgery.other_surgical_procedures import other_surgical_procedures_service
+    from subtopics.OralMaxillofacialSurgery.surgical_incision import surgical_incision_service
+    from subtopics.OralMaxillofacialSurgery.tmj_dysfunctions import tmj_dysfunctions_service
+    from subtopics.OralMaxillofacialSurgery.traumatic_wounds import traumatic_wounds_service
+    from subtopics.OralMaxillofacialSurgery.complicated_suturing import complicated_suturing_service
+    from subtopics.OralMaxillofacialSurgery.other_repair_procedures import other_repair_procedures_service
+    from subtopics.OralMaxillofacialSurgery.vestibuloplasty import vestibuloplasty_service
+    
+    print("Successfully imported all Oral and Maxillofacial Surgery service modules")
+except ImportError as e:
+    print(f"Warning: Could not import subtopics for OralMaxillofacialSurgery: {str(e)}")
+    print(f"Current sys.path: {sys.path}")
+    # Define fallback functions
+    def activate_extractions(scenario): return None
+    def activate_other_surgical_procedures(scenario): return None
+    def activate_alveoloplasty(scenario): return None
+    def activate_vestibuloplasty(scenario): return None
+    def activate_excision_soft_tissue(scenario): return None
+    def activate_excision_intra_osseous(scenario): return None
+    def activate_excision_bone_tissue(scenario): return None
+    def activate_surgical_incision(scenario): return None
+    def activate_closed_fractures(scenario): return None
+    def activate_open_fractures(scenario): return None
+    def activate_tmj_dysfunctions(scenario): return None
+    def activate_traumatic_wounds(scenario): return None
+    def activate_complicated_suturing(scenario): return None
+    def activate_other_repair_procedures(scenario): return None
 
 class OralMaxillofacialSurgeryServices:
     """Class to analyze and activate oral and maxillofacial surgery services based on dental scenarios."""
@@ -35,36 +67,39 @@ class OralMaxillofacialSurgeryServices:
     
     def _register_subtopics(self):
         """Register all subtopics for parallel activation."""
-        self.registry.register("D7111-D7140", activate_extractions, 
-                            "Extractions (D7111-D7140)")
-        self.registry.register("D7210-D7251", activate_extractions, 
-                            "Surgical Extractions (D7210-D7251)")
-        self.registry.register("D7260-D7297", activate_other_surgical_procedures, 
-                            "Other Surgical Procedures (D7260-D7297)")
-        self.registry.register("D7310-D7321", activate_alveoloplasty, 
-                            "Alveoloplasty (D7310-D7321)")
-        self.registry.register("D7340-D7350", activate_vestibuloplasty, 
-                            "Vestibuloplasty (D7340-D7350)")
-        self.registry.register("D7410-D7465", activate_excision_soft_tissue, 
-                            "Excision of Soft Tissue Lesions (D7410-D7465)")
-        self.registry.register("D7440-D7461", activate_excision_intra_osseous, 
-                            "Excision of Intra-Osseous Lesions (D7440-D7461)")
-        self.registry.register("D7471-D7490", activate_excision_bone_tissue, 
-                            "Excision of Bone Tissue (D7471-D7490)")
-        self.registry.register("D7510-D7560", activate_surgical_incision, 
-                            "Surgical Incision (D7510-D7560)")
-        self.registry.register("D7610-D7780", activate_closed_fractures, 
-                            "Treatment of Closed Fractures (D7610-D7780)")
-        self.registry.register("D7610-D7780", activate_open_fractures, 
-                            "Treatment of Open Fractures (D7610-D7780)")
-        self.registry.register("D7810-D7880", activate_tmj_dysfunctions, 
-                            "Reduction of Dislocation (D7810-D7880)")
-        self.registry.register("D7910-D7912", activate_traumatic_wounds, 
-                            "Repair of Traumatic Wounds (D7910-D7912)")
-        self.registry.register("D7911-D7912", activate_complicated_suturing, 
-                            "Complicated Suturing (D7911-D7912)")
-        self.registry.register("D7920-D7999", activate_other_repair_procedures, 
-                            "Other Repair Procedures (D7920-D7999)")
+        try:
+            self.registry.register("D7111-D7140", extractions_service.activate_extractions, 
+                                "Extractions (D7111-D7140)")
+            self.registry.register("D7210-D7251", extractions_service.activate_extractions, 
+                                "Surgical Extractions (D7210-D7251)")
+            self.registry.register("D7260-D7297", other_surgical_procedures_service.activate_other_surgical_procedures, 
+                                "Other Surgical Procedures (D7260-D7297)")
+            self.registry.register("D7310-D7321", alveoloplasty_service.activate_alveoloplasty, 
+                                "Alveoloplasty (D7310-D7321)")
+            self.registry.register("D7340-D7350", vestibuloplasty_service.activate_vestibuloplasty, 
+                                "Vestibuloplasty (D7340-D7350)")
+            self.registry.register("D7410-D7465", excision_soft_tissue_service.activate_excision_soft_tissue, 
+                                "Excision of Soft Tissue Lesions (D7410-D7465)")
+            self.registry.register("D7440-D7461", excision_intra_osseous_service.activate_excision_intra_osseous, 
+                                "Excision of Intra-Osseous Lesions (D7440-D7461)")
+            self.registry.register("D7471-D7490", excision_bone_tissue_service.activate_excision_bone_tissue, 
+                                "Excision of Bone Tissue (D7471-D7490)")
+            self.registry.register("D7510-D7560", surgical_incision_service.activate_surgical_incision, 
+                                "Surgical Incision (D7510-D7560)")
+            self.registry.register("D7610-D7780", closed_fractures_service.activate_closed_fractures, 
+                                "Treatment of Closed Fractures (D7610-D7780)")
+            self.registry.register("D7610-D7780", open_fractures_service.activate_open_fractures, 
+                                "Treatment of Open Fractures (D7610-D7780)")
+            self.registry.register("D7810-D7880", tmj_dysfunctions_service.activate_tmj_dysfunctions, 
+                                "Reduction of Dislocation (D7810-D7880)")
+            self.registry.register("D7910-D7912", traumatic_wounds_service.activate_traumatic_wounds, 
+                                "Repair of Traumatic Wounds (D7910-D7912)")
+            self.registry.register("D7911-D7912", complicated_suturing_service.activate_complicated_suturing, 
+                                "Complicated Suturing (D7911-D7912)")
+            self.registry.register("D7920-D7999", other_repair_procedures_service.activate_other_repair_procedures, 
+                                "Other Repair Procedures (D7920-D7999)")
+        except Exception as e:
+            print(f"Error registering subtopics: {str(e)}")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing oral and maxillofacial surgery services."""
@@ -208,7 +243,7 @@ List them in order of relevance, with the most relevant first.
             # Special case for sialoliths
             if "sialolith" in scenario.lower() and "D7260-D7297" not in oral_surgery_result:
                 print("Activating subtopic: Other Surgical Procedures (D7260-D7297) - Sialolithotomy")
-                code = activate_other_surgical_procedures(scenario)
+                code = other_surgical_procedures_service.activate_other_surgical_procedures(scenario)
                 if code:
                     specific_codes.append(code)
                     activated_subtopics.append("Other Surgical Procedures (D7260-D7297) - Sialolithotomy")

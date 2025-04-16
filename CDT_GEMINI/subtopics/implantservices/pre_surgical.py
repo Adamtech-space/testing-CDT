@@ -44,7 +44,7 @@ You are a dental coding expert specializing in implant services.
 - A specialized appliance is created to relate osteotomy or fixture position to existing anatomic structures during pre-surgical planning and/or implant placement.  
 - Use for radiographic assessment, treatment planning, or surgical guidance.  
 **What to Check:**  
-- Confirm the index’s purpose (radiographic, surgical, or both) via treatment plan.  
+- Confirm the index's purpose (radiographic, surgical, or both) via treatment plan.  
 - Verify fabrication details (e.g., CBCT-based, 3D-printed) and materials.  
 - Assess anatomic references (e.g., nerve, sinus, teeth) and implant count.  
 - Ensure narrative details creation process and clinical use.  
@@ -104,9 +104,10 @@ Scenario: {{scenario}}
         print(f"\n=== PRE-SURGICAL IMPLANT SERVICES ANALYSIS RESULT ===")
         print(f"PRE-SURGICAL IMPLANT CODE: {result if result else 'None'}")
 
+# Create the pre_surgical_service instance at module level
+pre_surgical_service = PreSurgicalImplantServices()
 
 # Example usage
-# if __name__ == "__main__":
-#     pre_surgical_service = PreSurgicalImplantServices()
-#     scenario = input("Enter a pre-surgical implant services dental scenario: ")
-#     pre_surgical_service.run_analysis(scenario)
+if __name__ == "__main__":
+    scenario = input("Enter a pre-surgical implant services dental scenario: ")
+    pre_surgical_service.run_analysis(scenario)

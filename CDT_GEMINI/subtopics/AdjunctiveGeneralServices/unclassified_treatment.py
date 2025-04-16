@@ -103,6 +103,5 @@ SCENARIO: {{scenario}}
 unclassified_service = UnclassifiedTreatmentServices()
 # Example usage
 if __name__ == "__main__":
-    unclassified_service = UnclassifiedTreatmentServices()
     scenario = input("Enter an unclassified treatment dental scenario: ")
     unclassified_service.run_analysis(scenario)

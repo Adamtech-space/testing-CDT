@@ -36,7 +36,7 @@ Does the patient require adjustments, repairs, or removal of orthodontic devices
 Is this a case where a standard code does not apply, requiring a report-based procedure?
 
 Code: D8660
-Use when: Monitoring a patient’s growth and dental development before starting orthodontic treatment.
+Use when: Monitoring a patient's growth and dental development before starting orthodontic treatment.
  Check: Ensure periodic evaluations are documented separately from diagnostic procedures.
  Note: This code applies to observation appointments to determine the right time for treatment.
 Code: D8670
@@ -95,7 +95,7 @@ Use when: A procedure is not adequately described by any existing orthodontic co
 Key Takeaways:
 Differentiate between pre-treatment evaluations, periodic visits, retention, and repairs.
 Ensure documentation clearly supports the need for the service provided.
-Use D8999 for unique orthodontic procedures that don’t fit standard codes.
+Use D8999 for unique orthodontic procedures that don't fit standard codes.
 Be specific about whether the service is for maxillary or mandibular appliances.
 
 
@@ -109,27 +109,27 @@ SCENARIO: {{scenario}}
 
     def extract_other_orthodontic_services_code(self, scenario: str) -> str:
         """Extract other orthodontic services code for a given scenario."""
-    try:
+        try:
             print(f"Analyzing other orthodontic services scenario: {scenario[:100]}...")
             result = self.llm_service.invoke_chain(self.prompt_template, {"scenario": scenario})
             code = result.strip()
             print(f"Other orthodontic services extract_other_orthodontic_services_code result: {code}")
             return code
-    except Exception as e:
+        except Exception as e:
             print(f"Error in other orthodontic services code extraction: {str(e)}")
-        return ""
+            return ""
 
     def activate_other_orthodontic_services(self, scenario: str) -> str:
         """Activate the other orthodontic services analysis process and return results."""
-    try:
+        try:
             result = self.extract_other_orthodontic_services_code(scenario)
             if not result:
                 print("No other orthodontic services code returned")
                 return ""
             return result
-    except Exception as e:
+        except Exception as e:
             print(f"Error activating other orthodontic services analysis: {str(e)}")
-        return "" 
+            return "" 
     
     def run_analysis(self, scenario: str) -> None:
         """Run the analysis and print results."""

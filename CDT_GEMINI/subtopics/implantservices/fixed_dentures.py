@@ -178,8 +178,10 @@ Scenario: {{scenario}}
         print(f"\n=== IMPLANT/ABUTMENT SUPPORTED FIXED DENTURES ANALYSIS RESULT ===")
         print(f"FIXED DENTURES CODE: {result if result else 'None'}")
 
+# Create service instance
+fixed_dentures_service = ImplantAbutmentSupportedFixedDenturesServices()
+
 # Example usage
 if __name__ == "__main__":
-    fixed_dentures_service = ImplantAbutmentSupportedFixedDenturesServices()
     scenario = input("Enter an implant/abutment-supported fixed dentures dental scenario: ")
     fixed_dentures_service.run_analysis(scenario)

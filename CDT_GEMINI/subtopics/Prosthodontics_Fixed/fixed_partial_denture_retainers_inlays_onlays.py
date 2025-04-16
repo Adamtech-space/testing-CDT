@@ -34,7 +34,7 @@ Before picking a code, ask:
 - What material is being used for the retainer (e.g., cast metal, porcelain/ceramic, resin, titanium)?
 - How many surfaces are involved in the inlay or onlay (two, three, or more)?
 - Is this a resin-bonded fixed prosthesis or a traditional fixed partial denture retainer?
-- Does the patient’s dental history indicate specific material preferences or allergies (e.g., metal sensitivity)?
+- Does the patient's dental history indicate specific material preferences or allergies (e.g., metal sensitivity)?
 
 ### Code: D6545  
 **Heading:** retainer - cast metal for resin bonded fixed prosthesis  
@@ -210,8 +210,10 @@ Scenario: {{scenario}}
         print(f"\n=== FIXED PARTIAL DENTURE RETAINERS INLAYS ONLAYS ANALYSIS RESULT ===")
         print(f"FIXED PARTIAL DENTURE RETAINERS INLAYS ONLAYS CODE: {result if result else 'None'}")
 
+# Create and export service instance
+fixed_partial_denture_retainers_inlays_onlays_service = FixedPartialDentureRetainersInlaysOnlaysServices()
+
 # Example usage
 if __name__ == "__main__":
-    fixed_partial_denture_retainers_inlays_onlays_service = FixedPartialDentureRetainersInlaysOnlaysServices()
     scenario = input("Enter a fixed partial denture retainers inlays onlays dental scenario: ")
     fixed_partial_denture_retainers_inlays_onlays_service.run_analysis(scenario) 

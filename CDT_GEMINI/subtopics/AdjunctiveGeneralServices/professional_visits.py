@@ -111,6 +111,5 @@ SCENARIO: {{scenario}}
 professional_visits_service = ProfessionalVisitsServices()
 # Example usage
 if __name__ == "__main__":
-    visits_service = ProfessionalVisitsServices()
     scenario = input("Enter a professional visits dental scenario: ")
-    visits_service.run_analysis(scenario)
+    professional_visits_service.run_analysis(scenario)

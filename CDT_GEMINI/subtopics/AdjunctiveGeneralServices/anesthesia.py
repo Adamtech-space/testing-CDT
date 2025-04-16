@@ -153,6 +153,5 @@ SCENARIO: {{scenario}}
 anesthesia_service = AnesthesiaServices()
 # Example usage
 if __name__ == "__main__":
-    anesthesia_service = AnesthesiaServices()
     scenario = input("Enter an anesthesia dental scenario: ")
     anesthesia_service.run_analysis(scenario)

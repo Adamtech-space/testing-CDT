@@ -13,12 +13,21 @@ sys.path.append(root_dir)
 
 # Import modules
 from topics.prompt import PROMPT
-from subtopics.Prosthodontics_Fixed import (
-    FixedPartialDenturePonticsServices,
-    FixedPartialDentureRetainersInlaysOnlaysServices,
-    FixedPartialDentureRetainersCrownsServices,
-    OtherFixedPartialDentureServicesServices
-)
+
+# Import service objects from subtopics with fallback mechanism
+try:
+    from subtopics.Prosthodontics_Fixed.fixed_partial_denture_pontics import fixed_partial_denture_pontics_service
+    from subtopics.Prosthodontics_Fixed.fixed_partial_denture_retainers_inlays_onlays import fixed_partial_denture_retainers_inlays_onlays_service
+    from subtopics.Prosthodontics_Fixed.fixed_partial_denture_retainers_crowns import fixed_partial_denture_retainers_crowns_service
+    from subtopics.Prosthodontics_Fixed.other_fixed_partial_denture_services import other_fixed_partial_denture_services_service
+except ImportError as e:
+    print(f"Warning: Could not import subtopics for Prosthodontics Fixed: {str(e)}")
+    print(f"Current sys.path: {sys.path}")
+    # Define fallback functions
+    def activate_fixed_partial_denture_pontics(scenario): return None
+    def activate_fixed_partial_denture_retainers_inlays_onlays(scenario): return None
+    def activate_fixed_partial_denture_retainers_crowns(scenario): return None
+    def activate_other_fixed_partial_denture_services(scenario): return None
 
 class FixedProsthodonticsServices:
     """Class to analyze and activate fixed prosthodontics services based on dental scenarios."""
@@ -28,25 +37,21 @@ class FixedProsthodonticsServices:
         self.llm_service = llm_service or get_service()
         self.prompt_template = self._create_prompt_template()
         self.registry = SubtopicRegistry()
-        
-        # Initialize service classes
-        self.fixed_partial_denture_pontics = FixedPartialDenturePonticsServices(self.llm_service)
-        self.fixed_partial_denture_retainers_inlays_onlays = FixedPartialDentureRetainersInlaysOnlaysServices(self.llm_service)
-        self.fixed_partial_denture_retainers_crowns = FixedPartialDentureRetainersCrownsServices(self.llm_service)
-        self.other_fixed_partial_denture_services = OtherFixedPartialDentureServicesServices(self.llm_service)
-        
         self._register_subtopics()
     
     def _register_subtopics(self):
         """Register all subtopics for parallel activation."""
-        self.registry.register("D6205-D6253", self.fixed_partial_denture_pontics.activate_fixed_partial_denture_pontics, 
-                            "Fixed Partial Denture Pontics (D6205-D6253)")
-        self.registry.register("D6545-D6634", self.fixed_partial_denture_retainers_inlays_onlays.activate_fixed_partial_denture_retainers_inlays_onlays, 
-                            "Fixed Partial Denture Retainers — Inlays/Onlays (D6545-D6634)")
-        self.registry.register("D6710-D6793", self.fixed_partial_denture_retainers_crowns.activate_fixed_partial_denture_retainers_crowns, 
-                            "Fixed Partial Denture Retainers — Crowns (D6710-D6793)")
-        self.registry.register("D6920-D6999", self.other_fixed_partial_denture_services.activate_other_fixed_partial_denture_services, 
-                            "Other Fixed Partial Denture Services (D6920-D6999)")
+        try:
+            self.registry.register("D6205-D6253", fixed_partial_denture_pontics_service.activate_fixed_partial_denture_pontics, 
+                                "Fixed Partial Denture Pontics (D6205-D6253)")
+            self.registry.register("D6545-D6634", fixed_partial_denture_retainers_inlays_onlays_service.activate_fixed_partial_denture_retainers_inlays_onlays, 
+                                "Fixed Partial Denture Retainers — Inlays/Onlays (D6545-D6634)")
+            self.registry.register("D6710-D6793", fixed_partial_denture_retainers_crowns_service.activate_fixed_partial_denture_retainers_crowns, 
+                                "Fixed Partial Denture Retainers — Crowns (D6710-D6793)")
+            self.registry.register("D6920-D6999", other_fixed_partial_denture_services_service.activate_other_fixed_partial_denture_services, 
+                                "Other Fixed Partial Denture Services (D6920-D6999)")
+        except Exception as e:
+            print(f"Error registering subtopics: {str(e)}")
     
     def _create_prompt_template(self) -> PromptTemplate:
         """Create the prompt template for analyzing fixed prosthodontics services."""

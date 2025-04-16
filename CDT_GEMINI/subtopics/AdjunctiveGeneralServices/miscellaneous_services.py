@@ -225,6 +225,5 @@ SCENARIO: {{scenario}}
 misc_service = MiscellaneousServices()
 # Example usage
 if __name__ == "__main__":
-    misc_service = MiscellaneousServices()
     scenario = input("Enter a miscellaneous services dental scenario: ")
     misc_service.run_analysis(scenario)
